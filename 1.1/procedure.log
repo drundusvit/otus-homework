@@ -1,0 +1,245 @@
+1. Скачал с kernel.org tarball ядра linux-4.19.37.tar.xz
+2. Распаковал его tar -xpJf linux-4.19.37.tar.xz
+3. cp /boot/config* .config
+4. Попытка make oldconfig из-под обычного пользователя:
+damir@ubuntu:~/Downloads/kernel/linux-4.19.37$ make oldconfig
+  HOSTCC  scripts/basic/fixdep
+  HOSTCC  scripts/kconfig/conf.o
+  YACC    scripts/kconfig/zconf.tab.c
+/bin/sh: 1: bison: not found
+scripts/Makefile.lib:196: recipe for target 'scripts/kconfig/zconf.tab.c' failed
+make[1]: *** [scripts/kconfig/zconf.tab.c] Error 127
+Makefile:539: recipe for target 'oldconfig' failed
+make: *** [oldconfig] Error 2
+damir@ubuntu:~/Downloads/kernel/linux-4.19.37$ sudo su
+[sudo] password for damir: 
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# 
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# 
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# 
+
+5. Из-под рута:
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# make oldconfig
+  YACC    scripts/kconfig/zconf.tab.c
+/bin/sh: 1: bison: not found
+scripts/Makefile.lib:196: recipe for target 'scripts/kconfig/zconf.tab.c' failed
+make[1]: *** [scripts/kconfig/zconf.tab.c] Error 127
+Makefile:539: recipe for target 'oldconfig' failed
+make: *** [oldconfig] Error 2
+
+6. Что такое bison?
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# grep bison Makefile 
+YACC		= bison
+7. Установка bison:
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# apt install bison
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+The following additional packages will be installed:
+  libbison-dev libsigsegv2 m4
+Suggested packages:
+  bison-doc
+The following NEW packages will be installed:
+  bison libbison-dev libsigsegv2 m4
+0 upgraded, 4 newly installed, 0 to remove and 77 not upgraded.
+Need to get 806 kB of archives.
+After this operation, 2,204 kB of additional disk space will be used.
+Do you want to continue? [Y/n] 
+Get:1 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 libsigsegv2 amd64 2.10-4 [14.1 kB]
+Get:2 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 m4 amd64 1.4.17-5 [195 kB]
+Get:3 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 libbison-dev amd64 2:3.0.4.dfsg-1 [338 kB]
+Get:4 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 bison amd64 2:3.0.4.dfsg-1 [259 kB]
+Fetched 806 kB in 1s (550 kB/s)
+Selecting previously unselected package libsigsegv2:amd64.
+(Reading database ... 177270 files and directories currently installed.)
+Preparing to unpack .../libsigsegv2_2.10-4_amd64.deb ...
+Unpacking libsigsegv2:amd64 (2.10-4) ...
+Selecting previously unselected package m4.
+Preparing to unpack .../archives/m4_1.4.17-5_amd64.deb ...
+Unpacking m4 (1.4.17-5) ...
+Selecting previously unselected package libbison-dev:amd64.
+Preparing to unpack .../libbison-dev_2%3a3.0.4.dfsg-1_amd64.deb ...
+Unpacking libbison-dev:amd64 (2:3.0.4.dfsg-1) ...
+Selecting previously unselected package bison.
+Preparing to unpack .../bison_2%3a3.0.4.dfsg-1_amd64.deb ...
+Unpacking bison (2:3.0.4.dfsg-1) ...
+Processing triggers for install-info (6.1.0.dfsg.1-5) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up libsigsegv2:amd64 (2.10-4) ...
+Setting up m4 (1.4.17-5) ...
+Setting up libbison-dev:amd64 (2:3.0.4.dfsg-1) ...
+Setting up bison (2:3.0.4.dfsg-1) ...
+update-alternatives: using /usr/bin/bison.yacc to provide /usr/bin/yacc (yacc) in auto mode
+Processing triggers for libc-bin (2.23-0ubuntu11) ...
+
+
+8. Вторая попатка из-под рута:
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# make oldconfig
+  YACC    scripts/kconfig/zconf.tab.c
+  LEX     scripts/kconfig/zconf.lex.c
+/bin/sh: 1: flex: not found
+scripts/Makefile.lib:188: recipe for target 'scripts/kconfig/zconf.lex.c' failed
+make[1]: *** [scripts/kconfig/zconf.lex.c] Error 127
+Makefile:539: recipe for target 'oldconfig' failed
+make: *** [oldconfig] Error 2
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# grep flex Makefile 
+LEX		= flex
+
+9. Установка flex
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# apt install flex
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+The following additional packages will be installed:
+  libfl-dev
+The following NEW packages will be installed:
+  flex libfl-dev
+0 upgraded, 2 newly installed, 0 to remove and 77 not upgraded.
+Need to get 302 kB of archives.
+After this operation, 897 kB of additional disk space will be used.
+Do you want to continue? [Y/n] 
+Get:1 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 libfl-dev amd64 2.6.0-11 [12.5 kB]
+Get:2 http://us.archive.ubuntu.com/ubuntu xenial/main amd64 flex amd64 2.6.0-11 [290 kB]
+Fetched 302 kB in 1s (287 kB/s)
+Selecting previously unselected package libfl-dev:amd64.
+(Reading database ... 177390 files and directories currently installed.)
+Preparing to unpack .../libfl-dev_2.6.0-11_amd64.deb ...
+Unpacking libfl-dev:amd64 (2.6.0-11) ...
+Selecting previously unselected package flex.
+Preparing to unpack .../flex_2.6.0-11_amd64.deb ...
+Unpacking flex (2.6.0-11) ...
+Processing triggers for libc-bin (2.23-0ubuntu11) ...
+Processing triggers for install-info (6.1.0.dfsg.1-5) ...
+Processing triggers for doc-base (0.10.7) ...
+Processing 1 added doc-base file...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up libfl-dev:amd64 (2.6.0-11) ...
+Setting up flex (2.6.0-11) ...
+Processing triggers for libc-bin (2.23-0ubuntu11) ...
+
+10. make oldconfig прошел. оставил все дефолтом, кроме одного(просто так). пришлось часто нажимать Enter.
+
+11. make первая попытка
+
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# make
+  SYSTBL  arch/x86/include/generated/asm/syscalls_32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_32_ia32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_64_x32.h
+  SYSTBL  arch/x86/include/generated/asm/syscalls_64.h
+  HYPERCALLS arch/x86/include/generated/asm/xen-hypercalls.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_32.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_64.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_x32.h
+  HOSTCC  arch/x86/tools/relocs_32.o
+  HOSTCC  arch/x86/tools/relocs_64.o
+  HOSTCC  arch/x86/tools/relocs_common.o
+  HOSTLD  arch/x86/tools/relocs
+  UPD     include/config/kernel.release
+  WRAP    arch/x86/include/generated/uapi/asm/bpf_perf_event.h
+  WRAP    arch/x86/include/generated/uapi/asm/poll.h
+  WRAP    arch/x86/include/generated/asm/dma-contiguous.h
+  WRAP    arch/x86/include/generated/asm/early_ioremap.h
+  WRAP    arch/x86/include/generated/asm/export.h
+  WRAP    arch/x86/include/generated/asm/mcs_spinlock.h
+  WRAP    arch/x86/include/generated/asm/mm-arch-hooks.h
+  UPD     include/generated/uapi/linux/version.h
+  UPD     include/generated/utsrelease.h
+  UPD     include/generated/timeconst.h
+  CC      kernel/bounds.s
+  UPD     include/generated/bounds.h
+  GEN     scripts/gdb/linux/constants.py
+  CC      arch/x86/kernel/asm-offsets.s
+  UPD     include/generated/asm-offsets.h
+  CALL    scripts/checksyscalls.sh
+warning: Cannot use CONFIG_STACK_VALIDATION=y, please install libelf-dev, libelf-devel or elfutils-libelf-devel
+  CC      scripts/mod/empty.o
+  HOSTCC  scripts/mod/mk_elfconfig
+  MKELF   scripts/mod/elfconfig.h
+  HOSTCC  scripts/mod/modpost.o
+  CC      scripts/mod/devicetable-offsets.s
+  UPD     scripts/mod/devicetable-offsets.h
+  HOSTCC  scripts/mod/file2alias.o
+  HOSTCC  scripts/mod/sumversion.o
+  HOSTLD  scripts/mod/modpost
+  HOSTCC  scripts/selinux/genheaders/genheaders
+  HOSTCC  scripts/selinux/mdp/mdp
+  HOSTCC  scripts/bin2c
+  HOSTCC  scripts/kallsyms
+  HOSTCC  scripts/conmakehash
+  HOSTCC  scripts/recordmcount
+  HOSTCC  scripts/sortextable
+  HOSTCC  scripts/asn1_compiler
+  HOSTCC  scripts/sign-file
+scripts/sign-file.c:25:30: fatal error: openssl/opensslv.h: No such file or directory
+compilation terminated.
+scripts/Makefile.host:90: recipe for target 'scripts/sign-file' failed
+make[1]: *** [scripts/sign-file] Error 1
+Makefile:1066: recipe for target 'scripts' failed
+make: *** [scripts] Error 2
+
+
+12. Поиск sign-file в Makefile
+
+ifdef CONFIG_MODULE_SIG_ALL
+$(eval $(call config_filename,MODULE_SIG_KEY))
+
+mod_sign_cmd = scripts/sign-file $(CONFIG_MODULE_SIG_HASH) $(MODULE_SIG_KEY_SRCPREFIX)$(CONFIG_MODULE_SIG_KEY) certs/signing_key.x509
+else
+mod_sign_cmd = true
+endif
+export mod_sign_cmd
+
+13. В папке scripts/sign-file.c нашел, что подключается 
+#include <openssl/opensslv.h>
+И, действительно, в стадартных путях этой библиотеки не было:
+cpp -v /dev/null -o /dev/null
+....
+#include <...> search starts here:
+ /usr/lib/gcc/x86_64-linux-gnu/5/include
+ /usr/local/include
+ /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed
+ /usr/include/x86_64-linux-gnu
+ /usr/include
+End of search list.
+14. Обновляю ubuntu через 
+apt update && apt upgrade
+Не получилось.
+15. Установлю 
+apt install libssl-dev
+Библиотека появилась:
+ls /usr/include/openssl/opensslv.h
+/usr/include/openssl/opensslv.h
+16. make done
+17. make install
+
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# make install
+sh ./arch/x86/boot/install.sh 4.19.37 arch/x86/boot/bzImage \
+	System.map "/boot"
+run-parts: executing /etc/kernel/postinst.d/apt-auto-removal 4.19.37 /boot/vmlinuz-4.19.37
+run-parts: executing /etc/kernel/postinst.d/initramfs-tools 4.19.37 /boot/vmlinuz-4.19.37
+update-initramfs: Generating /boot/initrd.img-4.19.37
+WARNING: missing /lib/modules/4.19.37
+Ensure all necessary drivers are built into the linux image!
+depmod: ERROR: could not open directory /lib/modules/4.19.37: No such file or directory
+depmod: FATAL: could not search modules: No such file or directory
+depmod: WARNING: could not open /var/tmp/mkinitramfs_mBwMQV/lib/modules/4.19.37/modules.order: No such file or directory
+depmod: WARNING: could not open /var/tmp/mkinitramfs_mBwMQV/lib/modules/4.19.37/modules.builtin: No such file or directory
+run-parts: executing /etc/kernel/postinst.d/pm-utils 4.19.37 /boot/vmlinuz-4.19.37
+run-parts: executing /etc/kernel/postinst.d/unattended-upgrades 4.19.37 /boot/vmlinuz-4.19.37
+run-parts: executing /etc/kernel/postinst.d/update-notifier 4.19.37 /boot/vmlinuz-4.19.37
+run-parts: executing /etc/kernel/postinst.d/zz-update-grub 4.19.37 /boot/vmlinuz-4.19.37
+Generating grub configuration file ...
+Warning: Setting GRUB_TIMEOUT to a non-zero value when GRUB_HIDDEN_TIMEOUT is set is no longer supported.
+Found linux image: /boot/vmlinuz-4.19.37
+Found initrd image: /boot/initrd.img-4.19.37
+Found linux image: /boot/vmlinuz-4.15.0-45-generic
+Found initrd image: /boot/initrd.img-4.15.0-45-generic
+Found memtest86+ image: /boot/memtest86+.elf
+Found memtest86+ image: /boot/memtest86+.bin
+done
+
+18. После перезагрузки система свалилась в initramfs. Интересно, что uname -a говорил, что версия ядра 4.19.37, т.е. то, что я ставил.
+19. Обновил initramfs
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# update-initramfs -u
+update-initramfs: Generating /boot/initrd.img-4.19.37
+root@ubuntu:/home/damir/Downloads/kernel/linux-4.19.37# 
+20. Загрузился с новой версией ядра. Проверить функциональость всего не удалось, но говорят, что некоторые драйверы нужно компилить сспециально для определенной версии ядра.
