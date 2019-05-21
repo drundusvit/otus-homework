@@ -1,0 +1,39 @@
+[root@otuslinux vagrant]# cat 5_cpu.log 
+Script started on Tue May 21 15:25:50 2019
+[root@otuslinux vagrant]# 
+[root@otuslinux vagrant]# 
+[root@otuslinux vagrant]# cat cpu.sh 
+#!/usr/bin/env bash
+
+echo "starting with 19 at $(date) "; time nice -19 dd if=/dev/urandom of=/dev/null bs=1024 count=4000001 &
+echo "starting with -20 at $(date) "; time nice --20 dd if=/dev/urandom of=/dev/null bs=1024 count=4000000 &
+wait $(jobs -p)
+[root@otuslinux vagrant]# 
+[root@otuslinux vagrant]# 
+[root@otuslinux vagrant]# 
+[root@otuslinux vagrant]# ./cpu.sh 
+starting with 19 at Tue May 21 15:25:59 UTC 2019 
+starting with -20 at Tue May 21 15:25:59 UTC 2019 
+4000000+0 records in
+4000000+0 records out
+4096000000 bytes (4.1 GB) copied, 26.0097 s, 157 MB/s
+
+real	0m26.013s
+user	0m1.009s
+sys	0m24.991s
+4000001+0 records in
+4000001+0 records out
+4096001024 bytes (4.1 GB) copied, 52.3726 s, 78.2 MB/s
+
+real	0m52.383s
+user	0m0.922s
+sys	0m25.427s
+[root@otuslinux vagrant]# ls
+5_cpu.log  cpu.sh
+[root@otuslinux vagrant]# eixt
+bash: eixt: command not found
+[root@otuslinux vagrant]# exit
+exit
+
+Script done on Tue May 21 15:27:45 2019
+
