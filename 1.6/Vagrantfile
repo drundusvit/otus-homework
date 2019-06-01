@@ -55,6 +55,7 @@ Vagrant.configure("2") do |config|
         echo "gpgcheck=0" >> /etc/yum.repos.d/local.repo
         mv /root/rpmbuild/RPMS/x86_64/wget-1.14-18.el7.1.x86_64.rpm /opt/repos/CentOS/7/wget-1.14-18.el7.1.x86_64.rpm
         sudo createrepo /opt/repos/CentOS/7/
+        
         #install wget from local-base repo
         #yum install --disablerepo=* --enablerepo=local-base wget -y
   	  SHELL

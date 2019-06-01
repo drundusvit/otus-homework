@@ -1,13 +1,5 @@
 FROM centos:7
 
-#RUN echo "[local-base]" > /etc/yum.repos.d/local.repo && \
-#        echo "name=Local-Base" >> /etc/yum.repos.d/local.repo && \
-#        echo "baseurl=file:///opt/repos/CentOS/7/" >> /etc/yum.repos.d/local.repo && \
-#       echo "enabled=1" >> /etc/yum.repos.d/local.repo && \
-#       echo "gpgcheck=0" >> /etc/yum.repos.d/local.repo && \
-#       mkdir -p /opt/repos/CentOS/7/
-#        #yum install --disablerepo=* --enablerepo=local-base wget -y
-
         #install packages we need
 RUN	      yum install -y redhat-lsb-core wget rpmdevtools rpm-build createrepo yum-utils epel-release gcc
         #download and unpack source rpm
@@ -32,6 +24,7 @@ RUN mkdir -p /opt/repos/CentOS/7/ && \
         #install wget from local-base repo
         #yum install --disablerepo=* --enablerepo=local-base wget -y
 
+#Using docker run <docker_image_name> you download index.html into /var/lib/docker/overlay2/<docker container hash>/ folder
 CMD ["wget", "otus.ru"]
 
 
