@@ -1,0 +1,2552 @@
+Script started on Вс 09 июн 2019 12:51:05
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ va[K[Kcat v[KVagrantfile 
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+home = ENV['HOME']
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+MACHINES = {
+  :lvm => {
+        :box_name => "centos/7",
+        :box_version => "1804.02",
+        :ip_addr => '192.168.11.101',
+    :disks => {
+        :sata1 => {
+            :dfile => home + '/VirtualBox VMs/sata1.vdi',
+            :size => 10240,
+            :port => 1
+        },
+        :sata2 => {
+            :dfile => home + '/VirtualBox VMs/sata2.vdi',
+            :size => 2048, # Megabytes
+            :port => 2
+        },
+        :sata3 => {
+            :dfile => home + '/VirtualBox VMs/sata3.vdi',
+            :size => 1024, # Megabytes
+            :port => 3
+        },
+        :sata4 => {
+            :dfile => home + '/VirtualBox VMs/sata4.vdi',
+            :size => 1024,
+            :port => 4
+        }
+    }
+  },
+}
+
+Vagrant.configure("2") do |config|
+
+    config.vm.box_version = "1804.02"
+    MACHINES.each do |boxname, boxconfig|
+  
+        config.vm.define boxname do |box|
+  
+            box.vm.box = boxconfig[:box_name]
+            box.vm.host_name = boxname.to_s
+  
+            #box.vm.network "forwarded_port", guest: 3260, host: 3260+offset
+  
+            box.vm.network "private_network", ip: boxconfig[:ip_addr]
+  
+            box.vm.provider :virtualbox do |vb|
+                    vb.customize ["modifyvm", :id, "--memory", "256"]
+                    needsController = false
+            boxconfig[:disks].each do |dname, dconf|
+                unless File.exist?(dconf[:dfile])
+                  vb.customize ['createhd', '--filename', dconf[:dfile], '--variant', 'Fixed', '--size', dconf[:size]]
+                                  needsController =  true
+                            end
+  
+            end
+                    if needsController == true
+                       vb.customize ["storagectl", :id, "--name", "SATA", "--add", "sata" ]
+                       boxconfig[:disks].each do |dname, dconf|
+                           vb.customize ['storageattach', :id,  '--storagectl', 'SATA', '--port', dconf[:port], '--device', 0, '--type', 'hdd', '--medium', dconf[:dfile]]
+                       end
+                    end
+            end
+  
+        box.vm.provision "shell", inline: <<-SHELL
+            mkdir -p ~root/.ssh
+            cp ~vagrant/.ssh/auth* ~root/.ssh
+            yum install -y mdadm smartmontools hdparm gdisk
+          SHELL
+  
+        end
+    end
+  end
+  
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant up
+[0mBringing machine 'lvm' up with 'virtualbox' provider...[0m
+[1m==> lvm: Importing base box 'centos/7'...[0m
+[0m[K[0m[0mProgress: 20%[0m[0m[K[0m[0mProgress: 40%[0m[0m[K[0m[0mProgress: 70%[0m[0m[K[0m[0mProgress: 90%[0m[0m[K[0m[1m==> lvm: Matching MAC address for NAT networking...[0m
+[1m==> lvm: Checking if box 'centos/7' version '1804.02' is up to date...[0m
+[1m==> lvm: Setting the name of the VM: stands-03-lvm_lvm_1560073884152_29270[0m
+[1;33m==> lvm: Vagrant has detected a configuration issue which exposes a
+==> lvm: vulnerability with the installed version of VirtualBox. The
+==> lvm: current guest is configured to use an E1000 NIC type for a
+==> lvm: network adapter which is vulnerable in this version of VirtualBox.
+==> lvm: Ensure the guest is trusted to use this configuration or update
+==> lvm: the NIC type using one of the methods below:
+==> lvm: 
+==> lvm:   https://www.vagrantup.com/docs/virtualbox/configuration.html#default-nic-type
+==> lvm:   https://www.vagrantup.com/docs/virtualbox/networking.html#virtualbox-nic-type[0m
+[1m==> lvm: Clearing any previously set network interfaces...[0m
+[1m==> lvm: Preparing network interfaces based on configuration...[0m
+[0m    lvm: Adapter 1: nat[0m
+[0m    lvm: Adapter 2: hostonly[0m
+[1m==> lvm: Forwarding ports...[0m
+[0m    lvm: 22 (guest) => 2222 (host) (adapter 1)[0m
+[1m==> lvm: Running 'pre-boot' VM customizations...[0m
+[1m==> lvm: Booting VM...[0m
+[1m==> lvm: Waiting for machine to boot. This may take a few minutes...[0m
+[0m    lvm: SSH address: 127.0.0.1:2222[0m
+[0m    lvm: SSH username: vagrant[0m
+[0m    lvm: SSH auth method: private key[0m
+[0m    lvm: Warning: Connection reset. Retrying...[0m
+[0m    lvm: Warning: Remote connection disconnect. Retrying...[0m
+[0m    lvm: Warning: Remote connection disconnect. Retrying...[0m
+[0m    lvm: Warning: Connection reset. Retrying...[0m
+[0m    lvm: Warning: Remote connection disconnect. Retrying...[0m
+[0m    lvm: Warning: Connection reset. Retrying...[0m
+[0m    lvm: 
+    lvm: Vagrant insecure key detected. Vagrant will automatically replace
+    lvm: this with a newly generated keypair for better security.[0m
+[0m    lvm: 
+    lvm: Inserting generated public key within guest...[0m
+[0m    lvm: Removing insecure key from the guest if it's present...[0m
+[0m    lvm: Key inserted! Disconnecting and reconnecting using new SSH key...[0m
+[1m==> lvm: Machine booted and ready![0m
+[1m==> lvm: Checking for guest additions in VM...[0m
+[0m    lvm: No guest additions were detected on the base box for this VM! Guest
+    lvm: additions are required for forwarded ports, shared folders, host only
+    lvm: networking, and more. If SSH fails on this machine, please install
+    lvm: the guest additions and repackage the box to continue.
+    lvm: 
+    lvm: This is not an error message; everything may continue to work properly,
+    lvm: in which case you may ignore this message.[0m
+[1m==> lvm: Setting hostname...[0m
+[1m==> lvm: Configuring and enabling network interfaces...[0m
+[1m==> lvm: Rsyncing folder: /home/damir/Python/bin/my-script/stands-03-lvm/ => /vagrant[0m
+[1m==> lvm: Running provisioner: shell...[0m
+[0m    lvm: Running: inline script[0m
+[0;32m    lvm: Loaded plugins: fastestmirror[0m
+[0;32m    lvm: Determining fastest mirrors[0m
+[0;32m    lvm:  * base: mirror.docker.ru
+    lvm:  * extras: mirror.docker.ru
+    lvm:  * updates: mirror.docker.ru[0m
+[0;32m    lvm: Resolving Dependencies
+    lvm: --> Running transaction check
+    lvm: ---> Package gdisk.x86_64 0:0.8.10-2.el7 will be installed[0m
+[0;32m    lvm: ---> Package hdparm.x86_64 0:9.43-5.el7 will be installed
+    lvm: ---> Package mdadm.x86_64 0:4.1-rc1_2.el7 will be installed[0m
+[0;32m    lvm: --> Processing Dependency: libreport-filesystem for package: mdadm-4.1-rc1_2.el7.x86_64[0m
+[0;32m    lvm: ---> Package smartmontools.x86_64 1:6.5-1.el7 will be installed
+    lvm: --> Processing Dependency: mailx for package: 1:smartmontools-6.5-1.el7.x86_64[0m
+[0;32m    lvm: --> Running transaction check
+    lvm: ---> Package libreport-filesystem.x86_64 0:2.1.11-42.el7.centos will be installed
+    lvm: ---> Package mailx.x86_64 0:12.5-19.el7 will be installed[0m
+[0;32m    lvm: --> Finished Dependency Resolution[0m
+[0;32m    lvm: 
+    lvm: Dependencies Resolved[0m
+[0;32m    lvm: 
+    lvm: ================================================================================
+    lvm:  Package                  Arch       Version                     Repository
+    lvm:                                                                            Size
+    lvm: ================================================================================
+    lvm: Installing:
+    lvm:  gdisk                    x86_64     0.8.10-2.el7                base     189 k
+    lvm:  hdparm                   x86_64     9.43-5.el7                  base      83 k
+    lvm:  mdadm                    x86_64     4.1-rc1_2.el7               base     433 k
+    lvm:  smartmontools            x86_64     1:6.5-1.el7                 base     460 k
+    lvm: Installing for dependencies:
+    lvm:  libreport-filesystem     x86_64     2.1.11-42.el7.centos        base      39 k
+    lvm:  mailx                    x86_64     12.5-19.el7                 base     245 k
+    lvm: 
+    lvm: Transaction Summary
+    lvm: ================================================================================
+    lvm: Install  4 Packages (+2 Dependent packages)
+    lvm: 
+    lvm: Total download size: 1.4 M
+    lvm: Installed size: 4.0 M
+    lvm: Downloading packages:[0m
+[0;32m    lvm: Public key for libreport-filesystem-2.1.11-42.el7.centos.x86_64.rpm is not installed[0m
+[0;31m    lvm: warning: /var/cache/yum/x86_64/7/base/packages/libreport-filesystem-2.1.11-42.el7.centos.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID f4a80eb5: NOKEY[0m
+[0;32m    lvm: --------------------------------------------------------------------------------
+    lvm: Total                                              1.0 MB/s | 1.4 MB  00:01     
+    lvm: Retrieving key from file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7[0m
+[0;31m    lvm: Importing GPG key 0xF4A80EB5:
+    lvm:  Userid     : "CentOS-7 Key (CentOS 7 Official Signing Key) <security@centos.org>"
+    lvm:  Fingerprint: 6341 ab27 53d7 8a78 a7c2 7bb1 24c6 a8a7 f4a8 0eb5
+    lvm:  Package    : centos-release-7-5.1804.el7.centos.x86_64 (@anaconda)
+    lvm:  From       : /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7[0m
+[0;32m    lvm: Running transaction check[0m
+[0;32m    lvm: Running transaction test[0m
+[0;32m    lvm: Transaction test succeeded
+    lvm: Running transaction[0m
+[0;32m    lvm:   Installing : mailx-12.5-19.el7.x86_64                                     1/6[0m
+[0;32m    lvm:  
+    lvm:   Installing : libreport-filesystem-2.1.11-42.el7.centos.x86_64             2/6[0m
+[0;32m    lvm:  
+    lvm:   Installing : mdadm-4.1-rc1_2.el7.x86_64                                   3/6[0m
+[0;32m    lvm:  
+    lvm:   Installing : 1:smartmontools-6.5-1.el7.x86_64                             4/6[0m
+[0;32m    lvm:  
+    lvm:   Installing : hdparm-9.43-5.el7.x86_64                                     5/6[0m
+[0;32m    lvm:  
+    lvm:   Installing : gdisk-0.8.10-2.el7.x86_64                                    6/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : libreport-filesystem-2.1.11-42.el7.centos.x86_64             1/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : 1:smartmontools-6.5-1.el7.x86_64                             2/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : gdisk-0.8.10-2.el7.x86_64                                    3/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : mdadm-4.1-rc1_2.el7.x86_64                                   4/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : mailx-12.5-19.el7.x86_64                                     5/6[0m
+[0;32m    lvm:  
+    lvm:   Verifying  : hdparm-9.43-5.el7.x86_64                                     6/6[0m
+[0;32m    lvm:  
+    lvm: 
+    lvm: Installed:
+    lvm:   gdisk.x86_64 0:0.8.10-2.el7          hdparm.x86_64 0:9.43-5.el7              
+    lvm:   mdadm.x86_64 0:4.1-rc1_2.el7         smartmontools.x86_64 1:6.5-1.el7        
+    lvm: 
+    lvm: Dependency Installed:
+    lvm:   libreport-filesystem.x86_64 0:2.1.11-42.el7.centos mailx.x86_64 0:12.5-19.el7
+    lvm: 
+    lvm: Complete![0m
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh
+]0;vagrant@lvm:~[?1034h[vagrant@lvm ~]$ 
+]0;vagrant@lvm:~[vagrant@lvm ~]$ 
+]0;vagrant@lvm:~[vagrant@lvm ~]$ sudo su
+]0;root@lvm:/home/vagrant[?1034h[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lsblk 
+NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                       8:0    0   40G  0 disk 
+├─sda1                    8:1    0    1M  0 part 
+├─sda2                    8:2    0    1G  0 part /boot
+└─sda3                    8:3    0   39G  0 part 
+  ├─VolGroup00-LogVol00 253:0    0 37.5G  0 lvm  /
+  └─VolGroup00-LogVol01 253:1    0  1.5G  0 lvm  [SWAP]
+sdb                       8:16   0   10G  0 disk 
+sdc                       8:32   0    2G  0 disk 
+sdd                       8:48   0    1G  0 disk 
+sde                       8:64   0    1G  0 disk 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# pvcreate /dev/sdb
+  Physical volume "/dev/sdb" successfully created.
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# vgcreate vg_home /dev/sda3 [K[K[Kb
+  Volume group "vg_home" successfully created
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lvcreate -L10G - [Kn lv_hoe[Kme vg_home 
+  Volume group "vg_home" has insufficient free space (2559 extents): 2560 required.
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lvs[Kdisplay 
+  --- Logical volume ---
+  LV Path                /dev/VolGroup00/LogVol00
+  LV Name                LogVol00
+  VG Name                VolGroup00
+  LV UUID                j6b8IV-KEw3-7bTw-Oqy8-1Ud3-juFC-SJBg12
+  LV Write Access        read/write
+  LV Creation host, time localhost.localdomain, 2018-05-12 18:50:24 +0000
+  LV Status              available
+  # open                 1
+  LV Size                <37.47 GiB
+  Current LE             1199
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Path                /dev/VolGroup00/LogVol01
+  LV Name                LogVol01
+  VG Name                VolGroup00
+  LV UUID                IAjIC6-ScnM-tvH6-7BTy-TN31-hd82-bgDSzd
+  LV Write Access        read/write
+  LV Creation host, time localhost.localdomain, 2018-05-12 18:50:25 +0000
+  LV Status              available
+  # open                 2
+  LV Size                1.50 GiB
+  Current LE             48
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+   
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lvdisplay [24@create -L10G -n lv_home vg_home[C[1P[1P[1P[1@+[1@1[1@0[1@0[1@%[1@F[1@R[1@E[1@E
+  Can't parse size argument.
+  Invalid argument for --size: +100%FREE
+  Error during parsing of command line.
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lvcreate -L+100%FREE -n lv_home vg_home [1P[1@l[1@ 
+  Logical volume "lv_home" created.
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# lvcreate -l +100%FREE -n lv_home vg_home [1PL[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cdisplay [K
+  --- Logical volume ---
+  LV Path                /dev/VolGroup00/LogVol00
+  LV Name                LogVol00
+  VG Name                VolGroup00
+  LV UUID                j6b8IV-KEw3-7bTw-Oqy8-1Ud3-juFC-SJBg12
+  LV Write Access        read/write
+  LV Creation host, time localhost.localdomain, 2018-05-12 18:50:24 +0000
+  LV Status              available
+  # open                 1
+  LV Size                <37.47 GiB
+  Current LE             1199
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Path                /dev/VolGroup00/LogVol01
+  LV Name                LogVol01
+  VG Name                VolGroup00
+  LV UUID                IAjIC6-ScnM-tvH6-7BTy-TN31-hd82-bgDSzd
+  LV Write Access        read/write
+  LV Creation host, time localhost.localdomain, 2018-05-12 18:50:25 +0000
+  LV Status              available
+  # open                 2
+  LV Size                1.50 GiB
+  Current LE             48
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+   
+  --- Logical volume ---
+  LV Path                /dev/vg_home/lv_home
+  LV Name                lv_home
+  VG Name                vg_home
+  LV UUID                oWfCJK-Ce3e-TS6A-eWuX-kFWo-0kDE-OUuvTd
+  LV Write Access        read/write
+  LV Creation host, time lvm, 2019-06-09 09:55:56 +0000
+  LV Status              available
+  # open                 0
+  LV Size                <10.00 GiB
+  Current LE             2559
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:2
+   
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# mount /dev/mapper/lv[K[K
+control              vg_home-lv_home      VolGroup00-LogVol00  VolGroup00-LogVol01  
+[root@lvm vagrant]# mount /dev/mapper/vg_home-lv_home /mnt
+mount: /dev/mapper/vg_home-lv_home is write-protected, mounting read-only
+mount: unknown filesystem type '(null)'
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# mkfs.ext4 /dev/mapper/vg_home-lv_home
+mke2fs 1.42.9 (28-Dec-2013)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=0 blocks, Stripe width=0 blocks
+655360 inodes, 2620416 blocks
+131020 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=2151677952
+80 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables:  0/80     done                            
+Writing inode tables:  0/80     done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information:  0/80     done
+
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# mkfs.ext4 /dev/mapper/vg_home-lv_home[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Count /dev/mapper/vg_home-lv_home /mnt
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# ls /home/
+[0m[38;5;27mvagrant[0m
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# rsync c[K-a /home/* /mnt/
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# ls /mnt/
+[0m[38;5;27mlost+found[0m  [38;5;27mvagrant[0m
+]0;root@lvm:/home/vagrant[root@lvm vagrant]# cd /nt[K[Kmnt/vagrant/
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# ls
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# ls /home/vg[Kagrant/
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# 
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# rm -rf /home/
+rm: cannot remove ‘/home/’: Device or resource busy
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# cd .
+]0;root@lvm:/mnt/vagrant[root@lvm vagrant]# cd ..
+]0;root@lvm:/mnt[root@lvm mnt]# cd ..[Krm -rf /home/
+rm: cannot remove ‘/home/’: Device or resource busy
+]0;root@lvm:/mnt[root@lvm mnt]# lsof[K[K[K[Kyum install -y /home/[K[K[K[K[K[Klsof
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.docker.ru
+ * extras: mirror.docker.ru
+ * updates: mirror.docker.ru
+Resolving Dependencies
+--> Running transaction check
+---> Package lsof.x86_64 0:4.87-6.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+============================================================================================================================================================================================================
+ Package                                        Arch                                             Version                                               Repository                                      Size
+============================================================================================================================================================================================================
+Installing:
+ lsof                                           x86_64                                           4.87-6.el7                                            base                                           331 k
+
+Transaction Summary
+============================================================================================================================================================================================================
+Install  1 Package
+
+Total download size: 331 k
+Installed size: 927 k
+Downloading packages:
+lsof-4.87-6.el7.x86_64.rpm                                                              0% [                                                                              ]  0.0 B/s |    0 B  --:--:-- ETA lsof-4.87-6.el7.x86_64.rpm                                                                                                                                                           | 331 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : lsof-4.87-6.el7.x86_64 [                                                                                                                                                               ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#########                                                                                                                                                      ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [####################                                                                                                                                           ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#########################                                                                                                                                      ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [###########################                                                                                                                                    ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [###############################                                                                                                                                ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [##########################################                                                                                                                     ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [######################################################                                                                                                         ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [############################################################                                                                                                   ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#######################################################################                                                                                        ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [##################################################################################                                                                             ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#############################################################################################                                                                  ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [########################################################################################################                                                       ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [################################################################################################################                                               ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [##################################################################################################################                                             ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#############################################################################################################################                                  ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [###################################################################################################################################                            ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#############################################################################################################################################                  ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [###################################################################################################################################################            ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#######################################################################################################################################################        ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [########################################################################################################################################################       ] 1/1  Installing : lsof-4.87-6.el7.x86_64 [#############################################################################################################################################################  ] 1/1  Installing : lsof-4.87-6.el7.x86_64                                                                                                                                                                   1/1 
+  Verifying  : lsof-4.87-6.el7.x86_64                                                                                                                                                                   1/1 
+
+Installed:
+  lsof.x86_64 0:4.87-6.el7                                                                                                                                                                                  
+
+Complete!
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# lsof /home/
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# lsof /home/yum install -y lsof[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[6Prm -rf /home/
+rm: cannot remove ‘/home/’: Device or resource busy
+]0;root@lvm:/mnt[root@lvm mnt]# unmo[K[K[Kmount /hon[Kme/
+umount: /home/: not mounted
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# umount /home/rm -rf[C[C[C[C[C[C[C*
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# 
+]0;root@lvm:/mnt[root@lvm mnt]# ls
+[0m[38;5;27mlost+found[0m  [38;5;27mvagrant[0m
+]0;root@lvm:/mnt[root@lvm mnt]# cd ..
+]0;root@lvm:/[root@lvm /]# ls
+[0m[38;5;51mbin[0m  [38;5;27mboot[0m  [38;5;27mdev[0m  [38;5;27metc[0m  [38;5;27mhome[0m  [38;5;51mlib[0m  [38;5;51mlib64[0m  [38;5;27mmedia[0m  [38;5;27mmnt[0m  [38;5;27mopt[0m  [38;5;27mproc[0m  [38;5;27mroot[0m  [38;5;27mrun[0m  [38;5;51msbin[0m  [38;5;27msrv[0m  [38;5;27msys[0m  [48;5;10;38;5;16mtmp[0m  [38;5;27musr[0m  [38;5;27mvagrant[0m  [38;5;27mvar[0m
+]0;root@lvm:/[root@lvm /]# lscd ..[3Plscd ..[3Pls[Kls /home/
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# unmou[K[K[K[Kmount /mnt
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# mount /dev/vg-[K[K[Kmapper/vg_home-lv_home /hon[Kme/
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# ls /home/
+[0m[38;5;27mlost+found[0m  [38;5;27mvagrant[0m
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# vi fst[K[K[K/etc/fstab 
+[?1049h[?1h=[1;62r[?12;25h[?12l[?25h[27m[m[H[2J[?25l[62;1H"/etc/fstab" 11L, 481C[2;1H#
+# /etc/fstab
+# Created by anaconda on Sat May 12 18:50:26 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/VolGroup00-LogVol00 /[23Cxfs     defaults[8C0 0
+UUID=570897ca-e759-4c81-90cf-389da6eee4cc /boot[19Cxfs     defaults[8C0 0
+/dev/mapper/VolGroup00-LogVol01 swap[20Cswap    defaults[8C0 0
+[94m~                                                                                                                                                                                                           [13;1H~                                                                                                                                                                                                           [14;1H~                                                                                                                                                                                                           [15;1H~                                                                                                                                                                                                           [16;1H~                                                                                                                                                                                                           [17;1H~                                                                                                                                                                                                           [18;1H~                                                                                                                                                                                                           [19;1H~                                                                                                                                                                                                           [20;1H~                                                                                                                                                                                                           [21;1H~                                                                                                                                                                                                           [22;1H~                                                                                                                                                                                                           [23;1H~                                                                                                                                                                                                           [24;1H~                                                                                                                                                                                                           [25;1H~                                                                                                                                                                                                           [26;1H~                                                                                                                                                                                                           [27;1H~                                                                                                                                                                                                           [28;1H~                                                                                                                                                                                                           [29;1H~                                                                                                                                                                                                           [30;1H~                                                                                                                                                                                                           [31;1H~                                                                                                                                                                                                           [32;1H~                                                                                                                                                                                                           [33;1H~                                                                                                                                                                                                           [34;1H~                                                                                                                                                                                                           [35;1H~                                                                                                                                                                                                           [36;1H~                                                                                                                                                                                                           [37;1H~                                                                                                                                                                                                           [38;1H~                                                                                                                                                                                                           [39;1H~                                                                                                                                                                                                           [40;1H~                                                                                                                                                                                                           [41;1H~                                                                                                                                                                                                           [42;1H~                                                                                                                                                                                                           [43;1H~                                                                                                                                                                                                           [44;1H~                                                                                                                                                                                                           [45;1H~                                                                                                                                                                                                           [46;1H~                                                                                                                                                                                                           [47;1H~                                                                                                                                                                                                           [48;1H~                                                                                                                                                                                                           [49;1H~                                                                                                                                                                                                           [50;1H~                                                                                                                                                                                                           [51;1H~                                                                                                                                                                                                           [52;1H~                                                                                                                                                                                                           [53;1H~                                                                                                                                                                                                           [54;1H~                                                                                                                                                                                                           [55;1H~                                                                                                                                                                                                           [56;1H~                                                                                                                                                                                                           [57;1H~                                                                                                                                                                                                           [58;1H~                                                                                                                                                                                                           [59;1H~                                                                                                                                                                                                           [60;1H~                                                                                                                                                                                                           [61;1H~                                                                                                                                                                                                           [1;1H[?12l[?25h
+
+
+
+
+
+
+
+
+
+[m/dev/mapper/VolGroup00-LogVol01 swap                    swap    defaults        0 [?25l[62;1H[1m-- INSERT --[m[62;14H[K[11;83H[?12l[?25h0[?25l[12;1H[K[12;1H[?12l[?25h[62;1H[K[12;1H[?25l[?12l[?25h[?25l[62;1H:[?12l[?25hw[?25l[62;2H[K[62;2H[?12l[?25hq![?25l[62;1H[K[62;1H[?1l>[?12l[?25h[?1049l]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# echo ""/"d"e"v"/"m"a"p"p"e"r"/"v"g"_"h"o"m"e"-"l"v"_"h"o"m"e"[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K[Kcat /etc/fstab 
+
+#
+# /etc/fstab
+# Created by anaconda on Sat May 12 18:50:26 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/VolGroup00-LogVol00 /                       xfs     defaults        0 0
+UUID=570897ca-e759-4c81-90cf-389da6eee4cc /boot                   xfs     defaults        0 0
+/dev/mapper/VolGroup00-LogVol01 swap                    swap    defaults        0 0
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# echo ""/"d"e"v"/"m"a"p"p"e"r"/"v"g"_"h"o"m"e"-"l"v"_"h"o"m"e" "/"h"o"m"e" "e"x"t"4" "d"e"f"a"u"l"t"s" "0" "0"[C >> e[K/etc/fstab 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# echo "/dev/mapper/vg_home-lv_home /home ext4 defaults 0 0" >> /etc/fstab [C[C[C[C[C[C[C[C[C[C[C[C[C[Ccat /etc/fstab [K
+
+#
+# /etc/fstab
+# Created by anaconda on Sat May 12 18:50:26 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/VolGroup00-LogVol00 /                       xfs     defaults        0 0
+UUID=570897ca-e759-4c81-90cf-389da6eee4cc /boot                   xfs     defaults        0 0
+/dev/mapper/VolGroup00-LogVol01 swap                    swap    defaults        0 0
+/dev/mapper/vg_home-lv_home /home ext4 defaults 0 0
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# unmo[K[K[Kmount [K[K[K[K[K[K[Kumount /home/
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# lvre
+lvreduce  lvremove  lvrename  lvresize  
+[root@lvm /]# lvreduce [K e2fsck -fy /dev/vg
+vga_arbiter  vg_home/     
+[root@lvm /]#  e2fsck -fy /dev/vg
+vga_arbiter  vg_home/     
+[root@lvm /]#  e2fsck -fy /dev/vgh=-[K[K[K_home/lv_home 
+e2fsck 1.42.9 (28-Dec-2013)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/vg_home/lv_home: 17/655360 files (0.0% non-contiguous), 83143/2620416 blocks
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# resize2fs d/[K[K/dev/mapper/vg_home-lv_home 10G
+resize2fs 1.42.9 (28-Dec-2013)
+The containing partition (or device) is only 2620416 (4k) blocks.
+You requested a new size of 2621440 blocks.
+
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# lvreduce /dev/mapp[K[K[K[K
+/dev/vg_home/lv_home      /dev/VolGroup00/LogVol00  /dev/VolGroup00/LogVol01  
+[root@lvm /]# lvreduce /dev/vg_home/lv_home -[C[C[C[C[C[C[C[C[C[C[C[C[C[Cresize2fs /dev/mapper/vg_home-lv_home 10G[C[1PG[1PG8G
+resize2fs 1.42.9 (28-Dec-2013)
+Resizing the filesystem on /dev/mapper/vg_home-lv_home to 2097152 (4k) blocks.
+The filesystem on /dev/mapper/vg_home-lv_home is now 2097152 blocks long.
+
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# resize2fs /dev/mapper/vg_home-lv_home 8G10G[1PG[1PG8G[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[7P e2fsck -fy /dev/vg_home/lv_home [C[C[C[C[C[C[C[C[C[C[C[C[C[Cresize2fs /dev/mapper/vg_home-lv_home 8G[K[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K[Klvreduce /dv[K[Ke[Kdev/vg_home/lv_home 8G
+  No command with matching syntax recognised.  Run 'lvreduce --help' for more information.
+  Correct command syntax is:
+  lvreduce -L|--size [-]Size[m|UNIT] LV
+
+]0;root@lvm:/[root@lvm /]# lvreduce /dev/vg_home/lv_home 8G[C 8G- 8GL 8G
+  WARNING: Reducing active logical volume to 8.00 GiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_home/lv_home? [y/n]: y
+  Size of logical volume vg_home/lv_home changed from <10.00 GiB (2559 extents) to 8.00 GiB (2048 extents).
+  Logical volume vg_home/lv_home successfully resized.
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# mount /dev/mapper/vg_home-lv_home /home/
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# ls /home/
+[0m[38;5;27mlost+found[0m  [38;5;27mvagrant[0m
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# df -h
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00   38G  751M   37G   2% /
+devtmpfs                         109M     0  109M   0% /dev
+tmpfs                            118M     0  118M   0% /dev/shm
+tmpfs                            118M  4.5M  114M   4% /run
+tmpfs                            118M     0  118M   0% /sys/fs/cgroup
+/dev/sda2                       1014M   63M  952M   7% /boot
+tmpfs                             24M     0   24M   0% /run/user/1000
+/dev/mapper/vg_home-lv_home      7.8G   37M  7.3G   1% /home
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# 
+]0;root@lvm:/[root@lvm /]# reboot
+Connection to 127.0.0.1 closed by remote host.
+Connection to 127.0.0.1 closed.
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh --debug
+ INFO global: Vagrant version: 2.2.4
+ INFO global: Ruby version: 2.4.4
+ INFO global: RubyGems version: 2.6.14.1
+ INFO global: VAGRANT_EXECUTABLE="/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/bin/vagrant"
+ INFO global: VAGRANT_INSTALLER_VERSION="2"
+ INFO global: VAGRANT_INSTALLER_ENV="1"
+ INFO global: VAGRANT_INSTALLER_EMBEDDED_DIR="/opt/vagrant/embedded"
+ INFO global: VAGRANT_LOG="debug"
+ WARN global: resolv replacement has not been enabled!
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/pushes/heroku/plugin.rb
+ INFO manager: Registered plugin: heroku
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/pushes/ftp/plugin.rb
+ INFO manager: Registered plugin: ftp
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/pushes/atlas/plugin.rb
+ INFO manager: Registered plugin: atlas
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/pushes/noop/plugin.rb
+ INFO manager: Registered plugin: noop
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/pushes/local-exec/plugin.rb
+ INFO manager: Registered plugin: local-exec
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/hyperv/plugin.rb
+ INFO manager: Registered plugin: Hyper-V provider
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/virtualbox/plugin.rb
+ INFO manager: Registered plugin: VirtualBox provider
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/docker/plugin.rb
+ INFO manager: Registered plugin: docker-provider
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/kernel_v2/plugin.rb
+ INFO manager: Registered plugin: kernel
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/help/plugin.rb
+ INFO manager: Registered plugin: help command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/plugin/plugin.rb
+ INFO manager: Registered plugin: plugin command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/snapshot/plugin.rb
+ INFO manager: Registered plugin: snapshot command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/powershell/plugin.rb
+ INFO manager: Registered plugin: powershell command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/push/plugin.rb
+ INFO manager: Registered plugin: push command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/package/plugin.rb
+ INFO manager: Registered plugin: package command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/rdp/plugin.rb
+ INFO manager: Registered plugin: rdp command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/global-status/plugin.rb
+ INFO manager: Registered plugin: global-status command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/provision/plugin.rb
+ INFO manager: Registered plugin: provision command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/winrm/plugin.rb
+ INFO manager: Registered plugin: winrm command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/login/plugin.rb
+ INFO manager: Registered plugin: vagrant-login
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/reload/plugin.rb
+ INFO manager: Registered plugin: reload command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/ssh/plugin.rb
+ INFO manager: Registered plugin: ssh command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/cloud/plugin.rb
+ INFO manager: Registered plugin: vagrant-cloud
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/provider/plugin.rb
+ INFO manager: Registered plugin: provider command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/version/plugin.rb
+ INFO manager: Registered plugin: version command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/ssh_config/plugin.rb
+ INFO manager: Registered plugin: ssh-config command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/resume/plugin.rb
+ INFO manager: Registered plugin: resume command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/destroy/plugin.rb
+ INFO manager: Registered plugin: destroy command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/suspend/plugin.rb
+ INFO manager: Registered plugin: suspend command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/up/plugin.rb
+ INFO manager: Registered plugin: up command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/init/plugin.rb
+ INFO manager: Registered plugin: init command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/list-commands/plugin.rb
+ INFO manager: Registered plugin: list-commands command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/cap/plugin.rb
+ INFO manager: Registered plugin: cap command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/box/plugin.rb
+ INFO manager: Registered plugin: box command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/status/plugin.rb
+ INFO manager: Registered plugin: status command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/validate/plugin.rb
+ INFO manager: Registered plugin: validate command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/winrm_config/plugin.rb
+ INFO manager: Registered plugin: winrm-config command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/halt/plugin.rb
+ INFO manager: Registered plugin: halt command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/upload/plugin.rb
+ INFO manager: Registered plugin: upload command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/commands/port/plugin.rb
+ INFO manager: Registered plugin: port command
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/kernel_v1/plugin.rb
+ INFO manager: Registered plugin: kernel
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/redhat/plugin.rb
+ INFO manager: Registered plugin: Red Hat Enterprise Linux host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/freebsd/plugin.rb
+ INFO manager: Registered plugin: FreeBSD host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/darwin/plugin.rb
+ INFO manager: Registered plugin: Mac OS X host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/void/plugin.rb
+ INFO manager: Registered plugin: Void host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/linux/plugin.rb
+ INFO manager: Registered plugin: Linux host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/windows/plugin.rb
+ INFO manager: Registered plugin: Windows host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/alt/plugin.rb
+ INFO manager: Registered plugin: ALT Platform host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/bsd/plugin.rb
+ INFO manager: Registered plugin: BSD host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/slackware/plugin.rb
+ INFO manager: Registered plugin: Slackware host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/gentoo/plugin.rb
+ INFO manager: Registered plugin: Gentoo host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/suse/plugin.rb
+ INFO manager: Registered plugin: SUSE host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/null/plugin.rb
+ INFO manager: Registered plugin: null host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/hosts/arch/plugin.rb
+ INFO manager: Registered plugin: Arch host
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/kali/plugin.rb
+ INFO manager: Registered plugin: Kali guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/tinycore/plugin.rb
+ INFO manager: Registered plugin: TinyCore Linux guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/esxi/plugin.rb
+ INFO manager: Registered plugin: ESXi guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/smartos/plugin.rb
+ INFO manager: Registered plugin: SmartOS guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/debian/plugin.rb
+ INFO manager: Registered plugin: Debian guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/netbsd/plugin.rb
+ INFO manager: Registered plugin: NetBSD guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/coreos/plugin.rb
+ INFO manager: Registered plugin: CoreOS guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/redhat/plugin.rb
+ INFO manager: Registered plugin: Red Hat Enterprise Linux guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/freebsd/plugin.rb
+ INFO manager: Registered plugin: FreeBSD guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/fedora/plugin.rb
+ INFO manager: Registered plugin: Fedora guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/atomic/plugin.rb
+ INFO manager: Registered plugin: Atomic Host guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/ubuntu/plugin.rb
+ INFO manager: Registered plugin: Ubuntu guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/funtoo/plugin.rb
+ INFO manager: Registered plugin: Funtoo guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/darwin/plugin.rb
+ INFO manager: Registered plugin: Darwin guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/trisquel/plugin.rb
+ INFO manager: Registered plugin: Trisquel guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/solaris/plugin.rb
+ INFO manager: Registered plugin: Solaris guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/linux/plugin.rb
+ INFO manager: Registered plugin: Linux guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/pld/plugin.rb
+ INFO manager: Registered plugin: PLD Linux guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/omnios/plugin.rb
+ INFO manager: Registered plugin: OmniOS guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/windows/plugin.rb
+ INFO manager: Registered plugin: Windows guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/alt/plugin.rb
+ INFO manager: Registered plugin: ALT Platform guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/bsd/plugin.rb
+ INFO manager: Registered plugin: BSD-based guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/slackware/plugin.rb
+ INFO manager: Registered plugin: Slackware guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/dragonflybsd/plugin.rb
+ INFO manager: Registered plugin: DragonFly BSD guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/gentoo/plugin.rb
+ INFO manager: Registered plugin: Gentoo guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/mint/plugin.rb
+ INFO manager: Registered plugin: Mint guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/photon/plugin.rb
+ INFO manager: Registered plugin: VMware Photon guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/elementary/plugin.rb
+ INFO manager: Registered plugin: Elementary guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/openbsd/plugin.rb
+ INFO manager: Registered plugin: OpenBSD guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/solaris11/plugin.rb
+ INFO manager: Registered plugin: Solaris 11 guest.
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/amazon/plugin.rb
+ INFO manager: Registered plugin: Amazon Linux guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/suse/plugin.rb
+ INFO manager: Registered plugin: SUSE guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/haiku/plugin.rb
+ INFO manager: Registered plugin: Haiku guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/arch/plugin.rb
+ INFO manager: Registered plugin: Arch guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/guests/nixos/plugin.rb
+ INFO manager: Registered plugin: NixOS guest
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/synced_folders/smb/plugin.rb
+ INFO manager: Registered plugin: SMB synced folders
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/synced_folders/rsync/plugin.rb
+ INFO manager: Registered plugin: RSync synced folders
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/synced_folders/nfs/plugin.rb
+ INFO manager: Registered plugin: NFS synced folders
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/communicators/winssh/plugin.rb
+ INFO manager: Registered plugin: windows ssh communicator
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/communicators/winrm/plugin.rb
+ INFO manager: Registered plugin: winrm communicator
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/communicators/ssh/plugin.rb
+ INFO manager: Registered plugin: ssh communicator
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/cfengine/plugin.rb
+ INFO manager: Registered plugin: CFEngine Provisioner
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/ansible/plugin.rb
+ INFO manager: Registered plugin: ansible
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/chef/plugin.rb
+ INFO manager: Registered plugin: chef
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/file/plugin.rb
+ INFO manager: Registered plugin: file
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/puppet/plugin.rb
+ INFO manager: Registered plugin: puppet
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/salt/plugin.rb
+ INFO manager: Registered plugin: salt
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/shell/plugin.rb
+ INFO manager: Registered plugin: shell
+DEBUG global: Loading core plugin: /opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/provisioners/docker/plugin.rb
+ INFO manager: Registered plugin: docker
+ INFO vagrant: `vagrant` invoked: ["ssh", "--debug"]
+DEBUG vagrant: Creating Vagrant environment
+ INFO environment: Environment initialized (#<Vagrant::Environment:0x00000000031a5768>)
+ INFO environment:   - cwd: /home/damir/Python/bin/my-script/stands-03-lvm
+ INFO environment: Home path: /home/damir/.vagrant.d
+DEBUG environment: Effective local data path: /home/damir/Python/bin/my-script/stands-03-lvm/.vagrant
+ INFO environment: Local data path: /home/damir/Python/bin/my-script/stands-03-lvm/.vagrant
+DEBUG environment: Creating: /home/damir/Python/bin/my-script/stands-03-lvm/.vagrant
+DEBUG manager: Enabling localized plugins
+ INFO manager: Plugins:
+DEBUG bundler: Current generated plugin dependency list: []
+DEBUG bundler: Generating new builtin set instance.
+DEBUG bundler: Generating new plugin set instance. Skip gems - []
+DEBUG bundler: Activating solution set: []
+ INFO manager: Loading plugins...
+DEBUG manager: Enabling globalized plugins
+ INFO manager: Plugins:
+DEBUG bundler: Current generated plugin dependency list: []
+DEBUG bundler: Generating new builtin set instance.
+DEBUG bundler: Generating new plugin set instance. Skip gems - []
+DEBUG bundler: Activating solution set: []
+ INFO manager: Loading plugins...
+ INFO loader: Set :root = ["#<Pathname:/home/damir/Python/bin/my-script/stands-03-lvm/Vagrantfile>"]
+DEBUG loader: Populating proc cache for #<Pathname:/home/damir/Python/bin/my-script/stands-03-lvm/Vagrantfile>
+DEBUG loader: Load procs for pathname: /home/damir/Python/bin/my-script/stands-03-lvm/Vagrantfile
+ INFO loader: Loading configuration in order: [:home, :root]
+DEBUG loader: Loading from: root (evaluating)
+DEBUG loader: Configuration loaded successfully, finalizing and returning
+DEBUG push: finalizing
+ INFO environment: Running hook: environment_plugins_loaded
+ INFO runner: Preparing hooks for middleware sequence...
+ INFO runner: 1 hooks defined.
+ INFO runner: Running action: environment_plugins_loaded #<Vagrant::Action::Builder:0x0000000002650200>
+ INFO environment: Running hook: environment_load
+ INFO runner: Preparing hooks for middleware sequence...
+ INFO runner: 1 hooks defined.
+ INFO runner: Running action: environment_load #<Vagrant::Action::Builder:0x0000000003381078>
+DEBUG checkpoint_client: starting plugin check
+ INFO cli: CLI: [] "ssh" []
+DEBUG checkpoint_client: plugin check complete
+DEBUG cli: Invoking command class: VagrantPlugins::CommandSSH::Command []
+DEBUG checkpoint_client: no information received from checkpoint
+DEBUG command: Getting target VMs for command. Arguments:
+DEBUG command:  -- names: []
+DEBUG command:  -- options: {:single_target=>true}
+DEBUG command: Loading all machines...
+ INFO command: Active machine found with name lvm. Using provider: virtualbox
+ INFO environment: Getting machine: lvm (virtualbox)
+ INFO environment: Uncached load of machine.
+ INFO base: VBoxManage path: VBoxManage
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "--version"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: 5.1.38_Ubuntur122592
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+DEBUG meta: Finding driver for VirtualBox version: 5.1.38
+ INFO meta: Using VirtualBox driver: VagrantPlugins::ProviderVirtualBox::Driver::Version_5_1
+ INFO base: VBoxManage path: VBoxManage
+ INFO loader: Set "26346340_machine_lvm" = ["[\"2\", #<Proc:0x0000000002fcd800@/home/damir/Python/bin/my-script/stands-03-lvm/Vagrantfile:41>]"]
+DEBUG loader: Populating proc cache for ["2", #<Proc:0x0000000002fcd800@/home/damir/Python/bin/my-script/stands-03-lvm/Vagrantfile:41>]
+ INFO loader: Loading configuration in order: [:home, :root, "26346340_machine_lvm"]
+DEBUG loader: Loading from: root (cache)
+DEBUG loader: Loading from: 26346340_machine_lvm (evaluating)
+DEBUG provisioner: Provisioner defined: 
+DEBUG loader: Configuration loaded successfully, finalizing and returning
+DEBUG push: finalizing
+ INFO box_collection: Box found: centos/7 (virtualbox)
+ INFO environment: Running hook: authenticate_box_url
+ INFO host: Autodetecting host type for [#<Vagrant::Environment: /home/damir/Python/bin/my-script/stands-03-lvm>]
+DEBUG host: Trying: redhat
+DEBUG host: Trying: freebsd
+DEBUG host: Trying: darwin
+DEBUG host: Trying: void
+DEBUG host: Trying: alt
+DEBUG host: Trying: slackware
+DEBUG host: Trying: gentoo
+DEBUG host: Trying: suse
+DEBUG host: Trying: arch
+DEBUG host: Trying: linux
+ INFO host: Detected: linux!
+ INFO runner: Preparing hooks for middleware sequence...
+ INFO runner: 2 hooks defined.
+ INFO runner: Running action: authenticate_box_url #<Vagrant::Action::Builder:0x00000000026afa98>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x00000000032ff0f0>
+ INFO warden: Calling IN action: #<VagrantPlugins::CloudCommand::AddAuthentication:0x00000000032ff078>
+DEBUG client: No authentication token in environment or /home/damir/.vagrant.d/data/vagrant_login_token
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x0000000003241b68>
+ INFO warden: Calling OUT action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x0000000003241b68>
+ INFO warden: Calling OUT action: #<VagrantPlugins::CloudCommand::AddAuthentication:0x00000000032ff078>
+ INFO warden: Calling OUT action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x00000000032ff0f0>
+ INFO loader: Set :"25499320_centos/7_virtualbox" = ["#<Pathname:/home/damir/.vagrant.d/boxes/centos-VAGRANTSLASH-7/1804.02/virtualbox/Vagrantfile>"]
+DEBUG loader: Populating proc cache for #<Pathname:/home/damir/.vagrant.d/boxes/centos-VAGRANTSLASH-7/1804.02/virtualbox/Vagrantfile>
+DEBUG loader: Load procs for pathname: /home/damir/.vagrant.d/boxes/centos-VAGRANTSLASH-7/1804.02/virtualbox/Vagrantfile
+ INFO loader: Loading configuration in order: [:"25499320_centos/7_virtualbox", :home, :root, "26346340_machine_lvm"]
+DEBUG loader: Loading from: 25499320_centos/7_virtualbox (evaluating)
+DEBUG loader: Loading from: root (cache)
+DEBUG loader: Loading from: 26346340_machine_lvm (cache)
+DEBUG loader: Configuration loaded successfully, finalizing and returning
+DEBUG push: finalizing
+ INFO machine: Initializing machine: lvm
+ INFO machine:   - Provider: VagrantPlugins::ProviderVirtualBox::Provider
+ INFO machine:   - Box: #<Vagrant::Box:0x0000000002447f30>
+ INFO machine:   - Data dir: /home/damir/Python/bin/my-script/stands-03-lvm/.vagrant/machines/lvm/virtualbox
+DEBUG virtualbox: Instantiating the driver for machine ID: "271ede45-c270-40bb-a304-31112a5a21f0"
+ INFO base: VBoxManage path: VBoxManage
+DEBUG meta: Finding driver for VirtualBox version: 5.1.38
+ INFO meta: Using VirtualBox driver: VagrantPlugins::ProviderVirtualBox::Driver::Version_5_1
+ INFO base: VBoxManage path: VBoxManage
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: Name:            stands-03-lvm_lvm_1560073884152_29270
+Groups:          /
+Guest OS:        Red Hat (64-bit)
+UUID:            271ede45-c270-40bb-a304-31112a5a21f0
+Config file:     /home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox
+Snapshot folder: /home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots
+Log folder:      /home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs
+Hardware UUID:   271ede45-c270-40bb-a304-31112a5a21f0
+Memory size:     256MB
+Page Fusion:     off
+VRAM size:       16MB
+CPU exec cap:    100%
+HPET:            off
+Chipset:         piix3
+Firmware:        BIOS
+Number of CPUs:  1
+PAE:             on
+Long Mode:       on
+Triple Fault Reset: off
+APIC:            on
+X2APIC:          on
+CPUID Portability Level: 0
+CPUID overrides: None
+Boot menu mode:  message and menu
+Boot Device (1): Floppy
+Boot Device (2): DVD
+Boot Device (3): HardDisk
+Boot Device (4): Not Assigned
+ACPI:            on
+IOAPIC:          on
+BIOS APIC mode:  APIC
+Time offset:     0ms
+RTC:             UTC
+Hardw. virt.ext: on
+Nested Paging:   on
+Large Pages:     off
+VT-x VPID:       on
+VT-x unr. exec.: on
+Paravirt. Provider: Default
+Effective Paravirt. Provider: KVM
+State:           running (since 2019-06-09T16:40:18.121000000)
+Monitor count:   1
+3D Acceleration: off
+2D Video Acceleration: off
+Teleporter Enabled: off
+Teleporter Port: 0
+Teleporter Address: 
+Teleporter Password: 
+Tracing Enabled: off
+Allow Tracing to Access VM: off
+Tracing Configuration: 
+Autostart Enabled: off
+Autostart Delay: 0
+Default Frontend: 
+Storage Controller Name (0):            IDE
+Storage Controller Type (0):            PIIX4
+Storage Controller Instance Number (0): 0
+Storage Controller Max Port Count (0):  2
+Storage Controller Port Count (0):      2
+Storage Controller Bootable (0):        on
+Storage Controller Name (1):            SATA
+Storage Controller Type (1):            IntelAhci
+Storage Controller Instance Number (1): 0
+Storage Controller Max Port Count (1):  30
+Storage Controller Port Count (1):      30
+Storage Controller Bootable (1):        on
+IDE (0, 0): /home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk (UUID: 124520f1-ad0c-4094-83ea-39fa4618441b)
+SATA (1, 0): /home/damir/VirtualBox VMs/sata1.vdi (UUID: 5805fc99-f618-4463-bb6f-425cf6caa162)
+SATA (2, 0): /home/damir/VirtualBox VMs/sata2.vdi (UUID: c8433176-25ae-45ad-af8d-ca53f60638cc)
+SATA (3, 0): /home/damir/VirtualBox VMs/sata3.vdi (UUID: 4b91f36e-0fed-4638-a81d-c09a2bea94ff)
+SATA (4, 0): /home/damir/VirtualBox VMs/sata4.vdi (UUID: 0d401ed7-870d-4406-942a-d2982e19c374)
+NIC 1:           MAC: 525400C9C704, Attachment: NAT, Cable connected: on, Trace: off (file: none), Type: 82540EM, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+NIC 1 Settings:  MTU: 0, Socket (send: 64, receive: 64), TCP Window (send:64, receive: 64)
+NIC 1 Rule(0):   name = ssh, protocol = tcp, host ip = 127.0.0.1, host port = 2222, guest ip = , guest port = 22
+NIC 2:           MAC: 080027D7C859, Attachment: Host-only Interface 'vboxnet1', Cable connected: on, Trace: off (file: none), Type: 82540EM, Reported speed: 0 Mbps, Boot priority: 0, Promisc Policy: deny, Bandwidth group: none
+NIC 3:           disabled
+NIC 4:           disabled
+NIC 5:           disabled
+NIC 6:           disabled
+NIC 7:           disabled
+NIC 8:           disabled
+Pointing Device: PS/2 Mouse
+Keyboard Device: PS/2 Keyboard
+UART 1:          disabled
+UART 2:          disabled
+UART 3:          disabled
+UART 4:          disabled
+LPT 1:           disabled
+LPT 2:           disabled
+Audio:           enabled (Driver: PulseAudio, Controller: AC97, Codec: STAC9700)
+Clipboard Mode:  disabled
+Drag and drop Mode: disabled
+Session name:    headless
+Video mode:      720x400x0 at 0,0 enabled
+VRDE:            disabled
+USB:             disabled
+EHCI:            disabled
+XHCI:            disabled
+
+USB Device Filters:
+
+<none>
+
+Available remote USB devices:
+
+<none>
+
+Currently Attached USB Devices:
+
+<none>
+
+Bandwidth groups:  <no
+DEBUG subprocess: stdout: ne>
+
+Shared folders:  <none>
+
+VRDE Connection:    not active
+Clients so far:     0
+
+Video capturing:    not active
+Capture screens:    0
+Capture file:       /home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm
+Capture dimensions: 1024x768
+Capture rate:       512 kbps
+Capture FPS:        25
+
+Guest:
+
+Configured memory balloon size:      0 MB
+OS type:                             RedHat_64
+Additions run level:                 0
+
+Guest Facilities:
+
+No active facilities.
+
+
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO interface: Machine: metadata ["provider", :virtualbox, {:target=>:lvm}]
+ INFO command: With machine: lvm (#<VagrantPlugins::ProviderVirtualBox::Provider:0x0000000002f47958 @logger=#<Log4r::Logger:0x0000000002f478e0 @fullname="vagrant::provider::virtualbox", @outputters=[], @additive=true, @name="virtualbox", @path="vagrant::provider", @parent=#<VagrantLogger:0x0000000002185bd0 @fullname="vagrant", @outputters=[#<Log4r::StderrOutputter:0x0000000002043600 @mon_owner=nil, @mon_count=0, @mon_mutex=#<Thread::Mutex:0x0000000002043538>, @name="stderr", @level=0, @formatter=#<Vagrant::Util::LoggingFormatter:0x00000000030720a8 @formatter=#<Log4r::BasicFormatter:0x0000000001f964f0 @depth=7>>, @out=#<IO:<STDERR>>>], @additive=true, @name="vagrant", @path="", @parent=#<Log4r::RootLogger:0x0000000002185338 @level=0, @outputters=[]>, @level=1, @trace=false>, @level=1, @trace=false>, @machine=#<Vagrant::Machine: lvm (VagrantPlugins::ProviderVirtualBox::Provider)>, @driver=#<VagrantPlugins::ProviderVirtualBox::Driver::Meta:0x0000000002f1cac8 @logger=#<Log4r::Logger:0x0000000002eeb108 @fullname="vagrant::provider::virtualbox::meta", @outputters=[], @additive=true, @name="meta", @path="vagrant::provider::virtualbox", @parent=#<Log4r::Logger:0x0000000002f478e0 @fullname="vagrant::provider::virtualbox", @outputters=[], @additive=true, @name="virtualbox", @path="vagrant::provider", @parent=#<VagrantLogger:0x0000000002185bd0 @fullname="vagrant", @outputters=[#<Log4r::StderrOutputter:0x0000000002043600 @mon_owner=nil, @mon_count=0, @mon_mutex=#<Thread::Mutex:0x0000000002043538>, @name="stderr", @level=0, @formatter=#<Vagrant::Util::LoggingFormatter:0x00000000030720a8 @formatter=#<Log4r::BasicFormatter:0x0000000001f964f0 @depth=7>>, @out=#<IO:<STDERR>>>], @additive=true, @name="vagrant", @path="", @parent=#<Log4r::RootLogger:0x0000000002185338 @level=0, @outputters=[]>, @level=1, @trace=false>, @level=1, @trace=false>, @level=1, @trace=false>, @interrupted=false, @vboxmanage_path="VBoxManage", @uuid="271ede45-c270-40bb-a304-31112a5a21f0", @driver=#<VagrantPlugins::ProviderVirtualBox::Driver::Version_5_1:0x0000000002e67d30 @logger=#<Log4r::Logger:0x0000000002d6c8e0 @fullname="vagrant::provider::virtualbox_5_1", @outputters=[], @additive=true, @name="virtualbox_5_1", @path="vagrant::provider", @parent=#<VagrantLogger:0x0000000002185bd0 @fullname="vagrant", @outputters=[#<Log4r::StderrOutputter:0x0000000002043600 @mon_owner=nil, @mon_count=0, @mon_mutex=#<Thread::Mutex:0x0000000002043538>, @name="stderr", @level=0, @formatter=#<Vagrant::Util::LoggingFormatter:0x00000000030720a8 @formatter=#<Log4r::BasicFormatter:0x0000000001f964f0 @depth=7>>, @out=#<IO:<STDERR>>>], @additive=true, @name="vagrant", @path="", @parent=#<Log4r::RootLogger:0x0000000002185338 @level=0, @outputters=[]>, @level=1, @trace=false>, @level=1, @trace=false>, @interrupted=false, @vboxmanage_path="VBoxManage", @uuid="271ede45-c270-40bb-a304-31112a5a21f0">, @version="5.1.38">, @cap_logger=#<Log4r::Logger:0x0000000002c2e528 @fullname="vagrant::capability_host::vagrantplugins::providervirtualbox::provider", @outputters=[], @additive=true, @name="provider", @path="vagrant::capability_host::vagrantplugins::providervirtualbox", @parent=#<VagrantLogger:0x0000000002185bd0 @fullname="vagrant", @outputters=[#<Log4r::StderrOutputter:0x0000000002043600 @mon_owner=nil, @mon_count=0, @mon_mutex=#<Thread::Mutex:0x0000000002043538>, @name="stderr", @level=0, @formatter=#<Vagrant::Util::LoggingFormatter:0x00000000030720a8 @formatter=#<Log4r::BasicFormatter:0x0000000001f964f0 @depth=7>>, @out=#<IO:<STDERR>>>], @additive=true, @name="vagrant", @path="", @parent=#<Log4r::RootLogger:0x0000000002185338 @level=0, @outputters=[]>, @level=1, @trace=false>, @level=1, @trace=false>, @cap_host_chain=[[:virtualbox, #<#<Class:0x0000000002c2ed20>:0x0000000002b15060>]], @cap_args=[#<Vagrant::Machine: lvm (VagrantPlugins::ProviderVirtualBox::Provider)>], @cap_caps={:hyperv=>#<Vagrant::Registry:0x0000000002c2eb90 @items={:public_address=>#<Proc:0x0000000003307638@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/hyperv/plugin.rb:25>, :snapshot_list=>#<Proc:0x00000000033074d0@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/hyperv/plugin.rb:30>}, @results_cache={}>, :virtualbox=>#<Vagrant::Registry:0x0000000002c2ea78 @items={:forwarded_ports=>#<Proc:0x000000000330c2a0@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/virtualbox/plugin.rb:27>, :nic_mac_addresses=>#<Proc:0x000000000330c200@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/virtualbox/plugin.rb:32>, :public_address=>#<Proc:0x000000000330c1d8@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/virtualbox/plugin.rb:37>, :snapshot_list=>#<Proc:0x000000000330c1b0@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/virtualbox/plugin.rb:42>}, @results_cache={}>, :docker=>#<Vagrant::Registry:0x0000000002c2e960 @items={:public_address=>#<Proc:0x0000000003327230@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/docker/plugin.rb:60>, :proxy_machine=>#<Proc:0x0000000003327140@/opt/vagrant/embedded/gems/2.2.4/gems/vagrant-2.2.4/plugins/providers/docker/plugin.rb:65>}, @results_cache={}>}>)
+DEBUG command: Invoking `ssh` action on machine
+ INFO machine: Calling action: ssh on provider VirtualBox (271ede45-c270-40bb-a304-31112a5a21f0)
+ INFO interface: Machine: action ["ssh", "start", {:target=>:lvm}]
+ INFO runner: Preparing hooks for middleware sequence...
+ INFO runner: 1 hooks defined.
+ INFO runner: Running action: machine_action_ssh #<Vagrant::Action::Builder:0x00000000032307c8>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x00000000031e8d10>
+ INFO warden: Calling IN action: #<VagrantPlugins::ProviderVirtualBox::Action::CheckVirtualbox:0x00000000031e8ce8>
+ INFO base: VBoxManage path: VBoxManage
+DEBUG meta: Finding driver for VirtualBox version: 5.1.38
+ INFO meta: Using VirtualBox driver: VagrantPlugins::ProviderVirtualBox::Driver::Version_5_1
+ INFO base: VBoxManage path: VBoxManage
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "list", "hostonlyifs"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: Name:            vboxnet1
+GUID:            786f6276-656e-4174-8000-0a0027000001
+DHCP:            Disabled
+IPAddress:       192.168.11.1
+NetworkMask:     255.255.255.0
+IPV6Address:     fe80:0000:0000:0000:0800:27ff:fe00:0001
+IPV6NetworkMaskPrefixLength: 64
+HardwareAddress: 0a:00:27:00:00:01
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-vboxnet1
+
+Name:            vboxnet0
+GUID:            786f6276-656e-4074-8000-0a0027000000
+DHCP:            Disabled
+IPAddress:       192.168.33.1
+NetworkMask:     255.255.255.0
+IPV6Address:     
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:00
+MediumType:      Ethernet
+Status:          Down
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x000000000317aa18>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x000000000317a9a0>
+ INFO warden: Calling IN action: #<VagrantPlugins::ProviderVirtualBox::Action::CheckCreated:0x000000000317a978>
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x000000000317a950>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x000000000317a8d8>
+ INFO warden: Calling IN action: #<VagrantPlugins::ProviderVirtualBox::Action::CheckAccessible:0x000000000317a8b0>
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x000000000317a888>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x000000000317a7e8>
+ INFO warden: Calling IN action: #<VagrantPlugins::ProviderVirtualBox::Action::CheckRunning:0x000000000317a7c0>
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::AfterTriggerAction:0x000000000317a798>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::BeforeTriggerAction:0x000000000317a720>
+ INFO warden: Calling IN action: #<Vagrant::Action::Builtin::SSHExec:0x000000000317a6f8>
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+DEBUG virtualbox_5_1: Searching for SSH port: 22
+DEBUG virtualbox_5_1: read_forward_ports: uuid=271ede45-c270-40bb-a304-31112a5a21f0 active_only=false
+ INFO subprocess: Starting process: ["/usr/bin/VBoxManage", "showvminfo", "271ede45-c270-40bb-a304-31112a5a21f0", "--machinereadable"]
+ INFO subprocess: Command not in installer, restoring original environment...
+DEBUG subprocess: Selecting on IO
+DEBUG subprocess: stdout: name="stands-03-lvm_lvm_1560073884152_29270"
+groups="/"
+ostype="Red Hat (64-bit)"
+UUID="271ede45-c270-40bb-a304-31112a5a21f0"
+CfgFile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.vbox"
+SnapFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Snapshots"
+LogFldr="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/Logs"
+hardwareuuid="271ede45-c270-40bb-a304-31112a5a21f0"
+memory=256
+pagefusion="off"
+vram=16
+cpuexecutioncap=100
+hpet="off"
+chipset="piix3"
+firmware="BIOS"
+cpus=1
+pae="on"
+longmode="on"
+triplefaultreset="off"
+apic="on"
+x2apic="on"
+cpuid-portability-level=0
+bootmenu="messageandmenu"
+boot1="floppy"
+boot2="dvd"
+boot3="disk"
+boot4="none"
+acpi="on"
+ioapic="on"
+biosapic="apic"
+biossystemtimeoffset=0
+rtcuseutc="on"
+hwvirtex="on"
+nestedpaging="on"
+largepages="off"
+vtxvpid="on"
+vtxux="on"
+paravirtprovider="default"
+effparavirtprovider="kvm"
+VMState="running"
+VMStateChangeTime="2019-06-09T16:40:18.121000000"
+monitorcount=1
+accelerate3d="off"
+accelerate2dvideo="off"
+teleporterenabled="off"
+teleporterport=0
+teleporteraddress=""
+teleporterpassword=""
+tracing-enabled="off"
+tracing-allow-vm-access="off"
+tracing-config=""
+autostart-enabled="off"
+autostart-delay=0
+defaultfrontend=""
+storagecontrollername0="IDE"
+storagecontrollertype0="PIIX4"
+storagecontrollerinstance0="0"
+storagecontrollermaxportcount0="2"
+storagecontrollerportcount0="2"
+storagecontrollerbootable0="on"
+storagecontrollername1="SATA"
+storagecontrollertype1="IntelAhci"
+storagecontrollerinstance1="0"
+storagecontrollermaxportcount1="30"
+storagecontrollerportcount1="30"
+storagecontrollerbootable1="on"
+"IDE-0-0"="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/centos-7-1-1.x86_64.vmdk"
+"IDE-ImageUUID-0-0"="124520f1-ad0c-4094-83ea-39fa4618441b"
+"IDE-0-1"="none"
+"IDE-1-0"="none"
+"IDE-1-1"="none"
+"SATA-0-0"="none"
+"SATA-1-0"="/home/damir/VirtualBox VMs/sata1.vdi"
+"SATA-ImageUUID-1-0"="5805fc99-f618-4463-bb6f-425cf6caa162"
+"SATA-2-0"="/home/damir/VirtualBox VMs/sata2.vdi"
+"SATA-ImageUUID-2-0"="c8433176-25ae-45ad-af8d-ca53f60638cc"
+"SATA-3-0"="/home/damir/VirtualBox VMs/sata3.vdi"
+"SATA-ImageUUID-3-0"="4b91f36e-0fed-4638-a81d-c09a2bea94ff"
+"SATA-4-0"="/home/damir/VirtualBox VMs/sata4.vdi"
+"SATA-ImageUUID-4-0"="0d401ed7-870d-4406-942a-d2982e19c374"
+"SATA-5-0"="none"
+"SATA-6-0"="none"
+"SATA-7-0"="none"
+"SATA-8-0"="none"
+"SATA-9-0"="none"
+"SATA-10-0"="none"
+"SATA-11-0"="none"
+"SATA-12-0"="none"
+"SATA-13-0"="none"
+"SATA-14-0"="none"
+"SATA-15-0"="none"
+"SATA-16-0"="none"
+"SATA-17-0"="none"
+"SATA-18-0"="none"
+"SATA-19-0"="none"
+"SATA-20-0"="none"
+"SATA-21-0"="none"
+"SATA-22-0"="none"
+"SATA-23-0"="none"
+"SATA-24-0"="none"
+"SATA-25-0"="none"
+"SATA-26-0"="none"
+"SATA-27-0"="none"
+"SATA-28-0"="none"
+"SATA-29-0"="none"
+natnet1="nat"
+macaddress1="525400C9C704"
+cableconnected1="on"
+nic1="nat"
+nictype1="82540EM"
+nicspeed1="0"
+mtu="0"
+sockSnd="64"
+sockRcv="64"
+tcpWndSnd="64"
+tcpWndRcv="64"
+Forwarding(0)="ssh,tcp,127.0.0.1,2222,,22"
+hostonlyadapter2="vboxnet1"
+macaddress2="080027D7C859"
+cableconnected2="on"
+nic2="hostonly"
+nictype2="82540EM"
+nicspeed2="0"
+nic3="none"
+nic4="none"
+nic5="none"
+nic6="none"
+nic7="none"
+nic8="none"
+hidpointing="ps2mouse"
+hidkeyboard="ps2kbd"
+uart1="off"
+uart2="off"
+uart3="off"
+uart4="off"
+lpt1="off"
+lpt2="off"
+audio="pulse"
+clipboard="disabled"
+draganddrop="disabled"
+SessionName="headless"
+VideoMode="720,400,0"@0,0 1
+vrde="off"
+usb="off"
+ehci="off"
+xhci="off"
+VRDEActiveConnection="off"
+VRDEClients=0
+vcpenabled="off"
+vcpscreens=0
+vcpfile="/home/damir/VirtualBox VMs/stands-03-lvm_lvm_1560073884152_29270/stands-03-lvm_lvm_1560073884152_29270.webm"
+vcpwidth=1024
+vcpheight=768
+vcprate=512
+vcpfps=25
+GuestMemoryBalloon=0
+GuestOSType="RedHat_64"
+GuestAdditionsRunLevel=0
+DEBUG subprocess: Waiting for process to exit. Remaining to timeout: 32000
+DEBUG subprocess: Exit status: 0
+DEBUG virtualbox_5_1:   - [1, "ssh", 2222, 22, "127.0.0.1"]
+DEBUG ssh: Checking key permissions: /home/damir/Python/bin/my-script/stands-03-lvm/.vagrant/machines/lvm/virtualbox/private_key
+ INFO ssh: Invoking SSH: /usr/bin/ssh ["vagrant@127.0.0.1", "-p", "2222", "-o", "LogLevel=FATAL", "-o", "Compression=yes", "-o", "DSAAuthentication=yes", "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", "/home/damir/Python/bin/my-script/stands-03-lvm/.vagrant/machines/lvm/virtualbox/private_key"]
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ifconfig
+docker0   Link encap:Ethernet  HWaddr 02:42:5b:ab:84:98  
+          inet addr:172.17.0.1  Bcast:172.17.255.255  Mask:255.255.0.0
+          UP BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+enp0s31f6 Link encap:Ethernet  HWaddr 8c:16:45:49:07:b6  
+          UP BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+          Interrupt:16 Memory:e8200000-e8220000 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:76544 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:76544 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:9727359 (9.7 MB)  TX bytes:9727359 (9.7 MB)
+
+vboxnet1  Link encap:Ethernet  HWaddr 0a:00:27:00:00:01  
+          inet addr:192.168.11.1  Bcast:192.168.11.255  Mask:255.255.255.0
+          inet6 addr: fe80::800:27ff:fe00:1/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1967 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:334209 (334.2 KB)
+
+wlp61s0   Link encap:Ethernet  HWaddr d4:6d:6d:2a:89:e2  
+          inet addr:192.168.1.36  Bcast:192.168.1.255  Mask:255.255.255.0
+          inet6 addr: fe80::40ff:fc87:2c74:7f48/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:14356126 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:6241774 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:18956622912 (18.9 GB)  TX bytes:1662032006 (1.6 GB)
+
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ arp -a
+? (192.168.1.1) at 04:bf:6d:03:d5:44 [ether] on wlp61s0
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ grep ip [K[K[Kaddress Vagrantfile 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ grep address Vagrantfile [1P[1P[1P[1P[1P[1P[1P[1@i
+# v[01;31m[Ki[m[Km: set ft=ruby :
+        :box_vers[01;31m[Ki[m[Kon => "1804.02",
+        :[01;31m[Ki[m[Kp_addr => '192.168.11.101',
+    :d[01;31m[Ki[m[Ksks => {
+            :df[01;31m[Ki[m[Kle => home + '/V[01;31m[Ki[m[KrtualBox VMs/sata1.vd[01;31m[Ki[m[K',
+            :s[01;31m[Ki[m[Kze => 10240,
+            :df[01;31m[Ki[m[Kle => home + '/V[01;31m[Ki[m[KrtualBox VMs/sata2.vd[01;31m[Ki[m[K',
+            :s[01;31m[Ki[m[Kze => 2048, # Megabytes
+            :df[01;31m[Ki[m[Kle => home + '/V[01;31m[Ki[m[KrtualBox VMs/sata3.vd[01;31m[Ki[m[K',
+            :s[01;31m[Ki[m[Kze => 1024, # Megabytes
+            :df[01;31m[Ki[m[Kle => home + '/V[01;31m[Ki[m[KrtualBox VMs/sata4.vd[01;31m[Ki[m[K',
+            :s[01;31m[Ki[m[Kze => 1024,
+Vagrant.conf[01;31m[Ki[m[Kgure("2") do |conf[01;31m[Ki[m[Kg|
+    conf[01;31m[Ki[m[Kg.vm.box_vers[01;31m[Ki[m[Kon = "1804.02"
+    MACHINES.each do |boxname, boxconf[01;31m[Ki[m[Kg|
+        conf[01;31m[Ki[m[Kg.vm.def[01;31m[Ki[m[Kne boxname do |box|
+            box.vm.box = boxconf[01;31m[Ki[m[Kg[:box_name]
+            box.vm.network "pr[01;31m[Ki[m[Kvate_network", [01;31m[Ki[m[Kp: boxconf[01;31m[Ki[m[Kg[:[01;31m[Ki[m[Kp_addr]
+            box.vm.prov[01;31m[Ki[m[Kder :v[01;31m[Ki[m[Krtualbox do |vb|
+                    vb.custom[01;31m[Ki[m[Kze ["mod[01;31m[Ki[m[Kfyvm", :[01;31m[Ki[m[Kd, "--memory", "256"]
+            boxconf[01;31m[Ki[m[Kg[:d[01;31m[Ki[m[Ksks].each do |dname, dconf|
+                unless F[01;31m[Ki[m[Kle.ex[01;31m[Ki[m[Kst?(dconf[:df[01;31m[Ki[m[Kle])
+                  vb.custom[01;31m[Ki[m[Kze ['createhd', '--f[01;31m[Ki[m[Klename', dconf[:df[01;31m[Ki[m[Kle], '--var[01;31m[Ki[m[Kant', 'F[01;31m[Ki[m[Kxed', '--s[01;31m[Ki[m[Kze', dconf[:s[01;31m[Ki[m[Kze]]
+                    [01;31m[Ki[m[Kf needsController == true
+                       vb.custom[01;31m[Ki[m[Kze ["storagectl", :[01;31m[Ki[m[Kd, "--name", "SATA", "--add", "sata" ]
+                       boxconf[01;31m[Ki[m[Kg[:d[01;31m[Ki[m[Ksks].each do |dname, dconf|
+                           vb.custom[01;31m[Ki[m[Kze ['storageattach', :[01;31m[Ki[m[Kd,  '--storagectl', 'SATA', '--port', dconf[:port], '--dev[01;31m[Ki[m[Kce', 0, '--type', 'hdd', '--med[01;31m[Ki[m[Kum', dconf[:df[01;31m[Ki[m[Kle]]
+        box.vm.prov[01;31m[Ki[m[Ks[01;31m[Ki[m[Kon "shell", [01;31m[Ki[m[Knl[01;31m[Ki[m[Kne: <<-SHELL
+            mkd[01;31m[Ki[m[Kr -p ~root/.ssh
+            yum [01;31m[Ki[m[Knstall -y mdadm smartmontools hdparm gd[01;31m[Ki[m[Ksk
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ grep i Vagrantfile [1@p
+        :[01;31m[Kip[m[K_addr => '192.168.11.101',
+            box.vm.network "private_network", [01;31m[Kip[m[K: boxconfig[:[01;31m[Kip[m[K_addr]
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ping 192.168.11.101
+PING 192.168.11.101 (192.168.11.101) 56(84) bytes of data.
+64 bytes from 192.168.11.101: icmp_seq=1 ttl=64 time=0.563 ms
+^C
+--- 192.168.11.101 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.563/0.563/0.563/0.000 ms
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh vagrant [K@192.168.11.101
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ECDSA key sent by the remote host is
+SHA256:TKY0ySrPGMjYEYTVcgMgsMMVw693CJmb+DCG2BQFDso.
+Please contact your system administrator.
+Add correct host key in /home/damir/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /home/damir/.ssh/known_hosts:3406
+  remove with:
+  ssh-keygen -f "/home/damir/.ssh/known_hosts" -R 192.168.11.101
+ECDSA host key for 192.168.11.101 has changed and you have requested strict checking.
+Host key verification failed.
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh-keygen -f "/home/damir/.ssh/known_hosts" -R 192.168.11.101
+# Host 192.168.11.101 found: line 3406
+/home/damir/.ssh/known_hosts updated.
+Original contents retained as /home/damir/.ssh/known_hosts.old
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh-keygen -f "/home/damir/.ssh/known_hosts" -R 192.168.11.101[36P vagrant@192.168.11.101
+The authenticity of host '192.168.11.101 (192.168.11.101)' can't be established.
+ECDSA key fingerprint is SHA256:TKY0ySrPGMjYEYTVcgMgsMMVw693CJmb+DCG2BQFDso.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.11.101' (ECDSA) to the list of known hosts.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh vagratn[K[Knt@127.0.0.1:2222
+ssh: Could not resolve hostname 127.0.0.1:2222: Name or service not known
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh vagrant@127.0.0.1:2222[1P2222 2222
+vagrant@127.0.0.1's password: 
+Permission denied, please try again.
+vagrant@127.0.0.1's password: 
+Permission denied, please try again.
+vagrant@127.0.0.1's password: 
+
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ man ssh
+[?1049h[?1h=SSH(1)                                                                                BSD General Commands Manual                                                                               SSH(1)[m
+[m
+[1mNAME[0m[m
+     [1mssh[0m — OpenSSH SSH client (remote login program)[m
+[m
+[1mSYNOPSIS[0m[m
+     [1mssh[0m [[1m-1246AaCfGgKkMNnqsTtVvXxYy[0m] [[1m-b[0m [4mbind_address[24m] [[1m-c[0m [4mcipher_spec[24m] [[1m-D[0m [[4mbind_address[24m:][4mport[24m] [[1m-E[0m [4mlog_file[24m] [[1m-e[0m [4mescape_char[24m] [[1m-F[0m [4mconfigfile[24m] [[1m-I[0m [4mpkcs11[24m] [[1m-i[0m [4midentity_file[24m] [[1m-L[0m [4maddress[24m][m
+         [[1m-l[0m [4mlogin_name[24m] [[1m-m[0m [4mmac_spec[24m] [[1m-O[0m [4mctl_cmd[24m] [[1m-o[0m [4moption[24m] [[1m-p[0m [4mport[24m] [[1m-Q[0m [4mquery_option[24m] [[1m-R[0m [4maddress[24m] [[1m-S[0m [4mctl_path[24m] [[1m-W[0m [4mhost[24m:[4mport[24m] [[1m-w[0m [4mlocal_tun[24m[:[4mremote_tun[24m]] [[4muser[24m@][4mhostname[24m [[4mcommand[24m][m
+[m
+[1mDESCRIPTION[0m[m
+     [1mssh[0m (SSH client) is a program for logging into a remote machine and for executing commands on a remote machine.  It is intended to provide secure encrypted communications between two untrusted[m
+     hosts over an insecure network.  X11 connections, arbitrary TCP ports and UNIX-domain sockets can also be forwarded over the secure channel.[m
+[m
+     [1mssh[0m connects and logs into the specified [4mhostname[24m (with optional [4muser[24m name).  The user must prove his/her identity to the remote machine using one of several methods (see below).[m
+[m
+     If [4mcommand[24m is specified, it is executed on the remote host instead of a login shell.[m
+[m
+     The options are as follows:[m
+[m
+     [1m-1[0m      Forces [1mssh[0m to try protocol version 1 only.[m
+[m
+     [1m-2[0m      Forces [1mssh[0m to try protocol version 2 only.[m
+[m
+     [1m-4[0m      Forces [1mssh[0m to use IPv4 addresses only.[m
+[m
+     [1m-6[0m      Forces [1mssh[0m to use IPv6 addresses only.[m
+[m
+     [1m-A[0m      Enables forwarding of the authentication agent connection.  This can also be specified on a per-host basis in a configuration file.[m
+[m
+             Agent forwarding should be enabled with caution.  Users with the ability to bypass file permissions on the remote host (for the agent's UNIX-domain socket) can access the local agent[m
+             through the forwarded connection.  An attacker cannot obtain key material from the agent, however they can perform operations on the keys that enable them to authenticate using the[m
+             identities loaded into the agent.[m
+[m
+     [1m-a[0m      Disables forwarding of the authentication agent connection.[m
+[m
+     [1m-b[0m [4mbind_address[24m[m
+             Use [4mbind_address[24m on the local machine as the source address of the connection.  Only useful on systems with more than one address.[m
+[m
+     [1m-C[0m      Requests compression of all data (including stdin, stdout, stderr, and data for forwarded X11, TCP and UNIX-domain connections).  The compression algorithm is the same used by gzip(1),[m
+             and the “level” can be controlled by the [1mCompressionLevel[0m option for protocol version 1.  Compression is desirable on modem lines and other slow connections, but will only slow down[m
+             things on fast networks.  The default value can be set on a host-by-host basis in the configuration files; see the [1mCompression[0m option.[m
+[m
+     [1m-c[0m [4mcipher_spec[24m[m
+             Selects the cipher specification for encrypting the session.[m
+[m
+             Protocol version 1 allows specification of a single cipher.  The supported values are “3des”, “blowfish”, and “des”.  For protocol version 2, [4mcipher_spec[24m is a comma-separated list of[m
+             ciphers listed in order of preference.  See the [1mCiphers[0m keyword in ssh_config(5) for more information.[m
+[m
+     [1m-D[0m [[4mbind_address[24m:][4mport[24m[m
+             Specifies a local “dynamic” application-level port forwarding.  This works by allocating a socket to listen to [4mport[24m on the local side, optionally bound to the specified [4mbind_address[24m.[m
+             Whenever a connection is made to this port, the connection is forwarded over the secure channel, and the application protocol is then used to determine where to connect to from the[m
+             remote machine.  Currently the SOCKS4 and SOCKS5 protocols are supported, and [1mssh[0m will act as a SOCKS server.  Only root can forward privileged ports.  Dynamic port forwardings can also[m
+             be specified in the configuration file.[m
+[m
+             IPv6 addresses can be specified by enclosing the address in square brackets.  Only the superuser can forward privileged ports.  By default, the local port is bound in accordance with[m
+             the [1mGatewayPorts[0m setting.  However, an explicit [4mbind_address[24m may be used to bind the connection to a specific address.  The [4mbind_address[24m of “localhost” indicates that the listening port[m
+             be bound for local use only, while an empty address or ‘*’ indicates that the port should be available from all interfaces.[m
+[m
+     [1m-E[0m [4mlog_file[24m[m
+             Append debug logs to [4mlog_file[24m instead of standard error.[m
+[m
+[7m Manual page ssh(1) line 1 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KBB[K     [1m-e[0m [4mescape_char[24m[m
+[7m Manual page ssh(1) line 2 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KBB[K             Sets the escape character for sessions with a pty (default: ‘~’).  The escape character is only recognized at the beginning of a line.  The escape character followed by a dot (‘.’)[m
+[7m Manual page ssh(1) line 3 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KBB[K             closes the connection; followed by control-Z suspends the connection; and followed by itself sends the escape character once.  Setting the character to “none” disables any escapes and[m
+[7m Manual page ssh(1) line 4 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KBB[K             makes the session fully transparent.[m
+[7m Manual page ssh(1) line 5 (press h for help or q to quit)[27m[K[K[m
+     [1m-F[0m [4mconfigfile[24m[m
+             Specifies an alternative per-user configuration file.  If a configuration file is given on the command line, the system-wide configuration file ([4m/etc/ssh/ssh_config[24m) will be ignored.[m
+             The default for the per-user configuration file is [4m~/.ssh/config[24m.[m
+[m
+     [1m-f[0m      Requests [1mssh[0m to go to background just before command execution.  This is useful if [1mssh[0m is going to ask for passwords or passphrases, but the user wants it in the background.  This[m
+             implies [1m-n[0m.  The recommended way to start X11 programs at a remote site is with something like [1mssh[0m [1m-f[0m [1mhost[0m [1mxterm[0m.[m
+[m
+             If the [1mExitOnForwardFailure[0m configuration option is set to “yes”, then a client started with [1m-f[0m will wait for all remote port forwards to be successfully established before placing[m
+             itself in the background.[m
+[m
+     [1m-G[0m      Causes [1mssh[0m to print its configuration after evaluating [1mHost[0m and [1mMatch[0m blocks and exit.[m
+[m
+     [1m-g[0m      Allows remote hosts to connect to local forwarded ports.  If used on a multiplexed connection, then this option must be specified on the master process.[m
+[m
+     [1m-I[0m [4mpkcs11[24m[m
+             Specify the PKCS#11 shared library [1mssh[0m should use to communicate with a PKCS#11 token providing the user's private RSA key.[m
+[m
+     [1m-i[0m [4midentity_file[24m[m
+             Selects a file from which the identity (private key) for public key authentication is read.  The default is [4m~/.ssh/identity[24m for protocol version 1, and [4m~/.ssh/id_dsa[24m, [4m~/.ssh/id_ecdsa[24m,[m
+             [4m~/.ssh/id_ed25519[24m and [4m~/.ssh/id_rsa[24m for protocol version 2.  Identity files may also be specified on a per-host basis in the configuration file.  It is possible to have multiple [1m-i[0m[m
+             options (and multiple identities specified in configuration files).  If no certificates have been explicitly specified by the [1mCertificateFile[0m directive, [1mssh[0m will also try to load cer‐[m
+             tificate information from the filename obtained by appending [4m-cert.pub[24m to identity filenames.[m
+[m
+     [1m-K[0m      Enables GSSAPI-based authentication and forwarding (delegation) of GSSAPI credentials to the server.[m
+[m
+     [1m-k[0m      Disables forwarding (delegation) of GSSAPI credentials to the server.[m
+[m
+     [1m-L[0m [[4mbind_address[24m:][4mport[24m:[4mhost[24m:[4mhostport[24m[m
+     [1m-L[0m [[4mbind_address[24m:][4mport[24m:[4mremote_socket[24m[m
+     [1m-L[0m [4mlocal_socket[24m:[4mhost[24m:[4mhostport[24m[m
+     [1m-L[0m [4mlocal_socket[24m:[4mremote_socket[24m[m
+             Specifies that connections to the given TCP port or Unix socket on the local (client) host are to be forwarded to the given host and port, or Unix socket, on the remote side.  This[m
+             works by allocating a socket to listen to either a TCP [4mport[24m on the local side, optionally bound to the specified [4mbind_address[24m, or to a Unix socket.  Whenever a connection is made to the[m
+             local port or socket, the connection is forwarded over the secure channel, and a connection is made to either [4mhost[24m port [4mhostport[24m, or the Unix socket [4mremote_socket[24m, from the remote[m
+             machine.[m
+[m
+             Port forwardings can also be specified in the configuration file.  Only the superuser can forward privileged ports.  IPv6 addresses can be specified by enclosing the address in square[m
+             brackets.[m
+[m
+             By default, the local port is bound in accordance with the [1mGatewayPorts[0m setting.  However, an explicit [4mbind_address[24m may be used to bind the connection to a specific address.  The[m
+             [4mbind_address[24m of “localhost” indicates that the listening port be bound for local use only, while an empty address or ‘*’ indicates that the port should be available from all interfaces.[m
+[m
+     [1m-l[0m [4mlogin_name[24m[m
+             Specifies the user to log in as on the remote machine.  This also may be specified on a per-host basis in the configuration file.[m
+[m
+     [1m-M[0m      Places the [1mssh[0m client into “master” mode for connection sharing.  Multiple [1m-M[0m options places [1mssh[0m into “master” mode with confirmation required before slave connections are accepted.[m
+             Refer to the description of [1mControlMaster[0m in ssh_config(5) for details.[m
+[m
+     [1m-m[0m [4mmac_spec[24m[m
+             A comma-separated list of MAC (message authentication code) algorithms, specified in order of preference.  See the [1mMACs[0m keyword for more information.[m
+[m
+     [1m-N[0m      Do not execute a remote command.  This is useful for just forwarding ports.[m
+[m
+     [1m-n[0m      Redirects stdin from [4m/dev/null[24m (actually, prevents reading from stdin).  This must be used when [1mssh[0m is run in the background.  A common trick is to use this to run X11 programs on a[m
+             remote machine.  For example, [1mssh[0m [1m-n[0m [1mshadows.cs.hut.fi[0m [1memacs[0m [1m&[0m will start an emacs on shadows.cs.hut.fi, and the X11 connection will be automatically forwarded over an encrypted chan‐[m
+             nel.  The [1mssh[0m program will be put in the background.  (This does not work if [1mssh[0m needs to ask for a password or passphrase; see also the [1m-f[0m option.)[m
+[m
+     [1m-O[0m [4mctl_cmd[24m[m
+             Control an active connection multiplexing master process.  When the [1m-O[0m option is specified, the [4mctl_cmd[24m argument is interpreted and passed to the master process.  Valid commands are:[m
+             “check” (check that the master process is running), “forward” (request forwardings without command execution), “cancel” (cancel forwardings), “exit” (request the master to exit), and[m
+[7m Manual page ssh(1) line 66 (press h for help or q to quit)[27m[K[K             “stop” (request the master to stop accepting further multiplexing requests).[m
+[m
+     [1m-o[0m [4moption[24m[m
+             Can be used to give options in the format used in the configuration file.  This is useful for specifying options for which there is no separate command-line flag.  For full details of[m
+             the options listed below, and their possible values, see ssh_config(5).[m
+[m
+                   AddKeysToAgent[m
+                   AddressFamily[m
+                   BatchMode[m
+                   BindAddress[m
+                   CanonicalDomains[m
+                   CanonicalizeFallbackLocal[m
+                   CanonicalizeHostname[m
+                   CanonicalizeMaxDots[m
+                   CanonicalizePermittedCNAMEs[m
+                   CertificateFile[m
+                   ChallengeResponseAuthentication[m
+                   CheckHostIP[m
+                   Cipher[m
+                   Ciphers[m
+                   ClearAllForwardings[m
+                   Compression[m
+                   CompressionLevel[m
+                   ConnectionAttempts[m
+                   ConnectTimeout[m
+                   ControlMaster[m
+                   ControlPath[m
+                   ControlPersist[m
+                   DynamicForward[m
+                   EscapeChar[m
+                   ExitOnForwardFailure[m
+                   FingerprintHash[m
+                   ForwardAgent[m
+                   ForwardX11[m
+                   ForwardX11Timeout[m
+                   ForwardX11Trusted[m
+                   GatewayPorts[m
+                   GlobalKnownHostsFile[m
+                   GSSAPIAuthentication[m
+                   GSSAPIDelegateCredentials[m
+                   HashKnownHosts[m
+                   Host[m
+                   HostbasedAuthentication[m
+                   HostbasedKeyTypes[m
+                   HostKeyAlgorithms[m
+                   HostKeyAlias[m
+                   HostName[m
+                   IdentityFile[m
+                   IdentitiesOnly[m
+                   IPQoS[m
+                   KbdInteractiveAuthentication[m
+                   KbdInteractiveDevices[m
+                   KexAlgorithms[m
+                   LocalCommand[m
+                   LocalForward[m
+                   LogLevel[m
+                   MACs[m
+                   Match[m
+                   NoHostAuthenticationForLocalhost[m
+                   NumberOfPasswordPrompts[m
+                   PasswordAuthentication[m
+[7m Manual page ssh(1) line 127 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM             “check” (check that the master process is running), “forward” (request forwardings without command execution), “cancel” (cancel forwardings), “exit” (request the master to exit), and[m
+[62;1H[K[7m Manual page ssh(1) line 126 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM             Control an active connection multiplexing master process.  When the [1m-O[0m option is specified, the [4mctl_cmd[24m argument is interpreted and passed to the master process.  Valid commands are:[m
+[62;1H[K[7m Manual page ssh(1) line 125 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM     [1m-O[0m [4mctl_cmd[24m[m
+[62;1H[K[7m Manual page ssh(1) line 124 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM[m
+[62;1H[K[7m Manual page ssh(1) line 123 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM             nel.  The [1mssh[0m program will be put in the background.  (This does not work if [1mssh[0m needs to ask for a password or passphrase; see also the [1m-f[0m option.)[m
+[62;1H[K[7m Manual page ssh(1) line 122 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM             remote machine.  For example, [1mssh[0m [1m-n[0m [1mshadows.cs.hut.fi[0m [1memacs[0m [1m&[0m will start an emacs on shadows.cs.hut.fi, and the X11 connection will be automatically forwarded over an encrypted chan‐[m
+[62;1H[K[7m Manual page ssh(1) line 121 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM     [1m-n[0m      Redirects stdin from [4m/dev/null[24m (actually, prevents reading from stdin).  This must be used when [1mssh[0m is run in the background.  A common trick is to use this to run X11 programs on a[m
+[62;1H[K[7m Manual page ssh(1) line 120 (press h for help or q to quit)[27m[K[K [KESCESC[KOO[KAA[K[HM[m
+[62;1H[K[7m Manual page ssh(1) line 119 (press h for help or q to quit)[27m[K[K                   LocalCommand[m
+                   LocalForward[m
+                   LogLevel[m
+                   MACs[m
+                   Match[m
+                   NoHostAuthenticationForLocalhost[m
+                   NumberOfPasswordPrompts[m
+                   PasswordAuthentication[m
+                   PermitLocalCommand[m
+                   PKCS11Provider[m
+                   Port[m
+                   PreferredAuthentications[m
+                   Protocol[m
+                   ProxyCommand[m
+                   ProxyUseFdpass[m
+                   PubkeyAcceptedKeyTypes[m
+                   PubkeyAuthentication[m
+                   RekeyLimit[m
+                   RemoteForward[m
+                   RequestTTY[m
+                   RhostsRSAAuthentication[m
+                   RSAAuthentication[m
+                   SendEnv[m
+                   ServerAliveInterval[m
+                   ServerAliveCountMax[m
+                   StreamLocalBindMask[m
+                   StreamLocalBindUnlink[m
+                   StrictHostKeyChecking[m
+                   TCPKeepAlive[m
+                   Tunnel[m
+                   TunnelDevice[m
+                   UpdateHostKeys[m
+                   UsePrivilegedPort[m
+                   User[m
+                   UserKnownHostsFile[m
+                   VerifyHostKeyDNS[m
+                   VisualHostKey[m
+                   XAuthLocation[m
+[m
+     [1m-p[0m [4mport[24m[m
+             Port to connect to on the remote host.  This can be specified on a per-host basis in the configuration file.[m
+[m
+     [1m-Q[0m [4mquery_option[24m[m
+             Queries [1mssh[0m for the algorithms supported for the specified version 2.  The available features are: [4mcipher[24m (supported symmetric ciphers), [4mcipher-auth[24m (supported symmetric ciphers that[m
+             support authenticated encryption), [4mmac[24m (supported message integrity codes), [4mkex[24m (key exchange algorithms), [4mkey[24m (key types), [4mkey-cert[24m (certificate key types), [4mkey-plain[24m (non-certificate[m
+             key types), and [4mprotocol-version[24m (supported SSH protocol versions).[m
+[m
+     [1m-q[0m      Quiet mode.  Causes most warning and diagnostic messages to be suppressed.[m
+[m
+     [1m-R[0m [[4mbind_address[24m:][4mport[24m:[4mhost[24m:[4mhostport[24m[m
+     [1m-R[0m [[4mbind_address[24m:][4mport[24m:[4mlocal_socket[24m[m
+     [1m-R[0m [4mremote_socket[24m:[4mhost[24m:[4mhostport[24m[m
+     [1m-R[0m [4mremote_socket[24m:[4mlocal_socket[24m[m
+             Specifies that connections to the given TCP port or Unix socket on the remote (server) host are to be forwarded to the given host and port, or Unix socket, on the local side.  This[m
+             works by allocating a socket to listen to either a TCP [4mport[24m or to a Unix socket on the remote side.  Whenever a connection is made to this port or Unix socket, the connection is for‐[m
+             warded over the secure channel, and a connection is made to either [4mhost[24m port [4mhostport[24m, or [4mlocal_socket[24m, from the local machine.[m
+[m
+             Port forwardings can also be specified in the configuration file.  Privileged ports can be forwarded only when logging in as root on the remote machine.  IPv6 addresses can be specified[m
+             by enclosing the address in square brackets.[m
+[m
+             By default, TCP listening sockets on the server will be bound to the loopback interface only.  This may be overridden by specifying a [4mbind_address[24m.  An empty [4mbind_address[24m, or the[m
+[7m Manual page ssh(1) line 180 (press h for help or q to quit)[27m[K[K[?1l>[?1049l]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ man sshssh vagrant@127.0.0.1 2222-2222p2222 2222
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ECDSA key sent by the remote host is
+SHA256:TKY0ySrPGMjYEYTVcgMgsMMVw693CJmb+DCG2BQFDso.
+Please contact your system administrator.
+Add correct host key in /home/damir/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /home/damir/.ssh/known_hosts:3406
+  remove with:
+  ssh-keygen -f "/home/damir/.ssh/known_hosts" -R [127.0.0.1]:2222
+ECDSA host key for [127.0.0.1]:2222 has changed and you have requested strict checking.
+Host key verification failed.
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh-keygen -f "/home/damir/.ssh/known_hosts" -R [127.0.0.1]:2222
+# Host [127.0.0.1]:2222 found: line 3406
+/home/damir/.ssh/known_hosts updated.
+Original contents retained as /home/damir/.ssh/known_hosts.old
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh-keygen -f "/home/damir/.ssh/known_hosts" -R [127.0.0.1]:2222[35P vagrant@127.0.0.1 -p 2222
+The authenticity of host '[127.0.0.1]:2222 ([127.0.0.1]:2222)' can't be established.
+ECDSA key fingerprint is SHA256:TKY0ySrPGMjYEYTVcgMgsMMVw693CJmb+DCG2BQFDso.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '[127.0.0.1]:2222' (ECDSA) to the list of known hosts.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ 
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh vagrant@127.0.0.1 -p 2222-keygen -f "/home/damir/.ssh/known_hosts" -R [127.0.0.1]:2222[35P vagrant@127.0.0.1 -p 2222man ssh[Kssh vagrant@127.0.0.1 2222:222292.168.11.101-keygen -f "/home/damir/.ssh/known_hosts" -R 192.168.11.101[36P vagrant@192.168.11.101[K[Kvagrant ssh
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant ssh
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ vagrant sshssh vagrant@127.0.0.1 -p 2222
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh vagrant@127.0.0.1 -p 2222[1P[1P[1P[1P[1P[1P[1P[1@r[1@o[1@o[1@t
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+]0;damir@damir-ThinkPad-T480s: ~/Python/bin/my-script/stands-03-lvm[01;32mdamir@damir-ThinkPad-T480s[00m:[01;34m~/Python/bin/my-script/stands-03-lvm[00m$ ssh root@127.0.0.1 -p 2222[K[K[K[Kvagrant@127.0.0.1 -p 2222[18Pvagrant sshssh vagrant@127.0.0.1 -p 2222
