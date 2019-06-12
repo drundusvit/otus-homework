@@ -1,0 +1,11 @@
+---
+# handlers file for web-server
+- name: nginx start
+  systemd:
+   name: nginx
+   state: started
+
+- name: nginx enabled
+  systemd:
+   name: ngnix
+   enabled: yes
