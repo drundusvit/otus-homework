@@ -1,0 +1,17 @@
+# /etc/systemd/system/spawn-fcgi.service
+[Unit]
+Description=Spawn FastCGI scripts to be used by web servers
+Requires=network.target rsyslog.service NetworkManager.service
+
+
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/bash -c '[ -n "${SOCKET}" -a -S "${SOCKET}" ] && /bin/rm -f ${SOCKET}'
+ExecStart=/usr/bin/spawn-fcgi -n $OPTIONS
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+KillMode=process
+ExecStopPost=-/usr/bin/bash -c '[ -n "${SOCKET}" -a -S "${SOCKET}" ] && /bin/rm -f ${SOCKET}'
+
+[Install]
+WantedBy=multi-user.target

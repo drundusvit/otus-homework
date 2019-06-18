@@ -1,0 +1,40 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install epel-release
+      yum: 
+       name:
+        - epel-release
+       state: present
+    - name: Install necessary packages
+      yum: 
+       name:
+        - spawn-fcgi
+        - php
+        - php-cli
+        - httpd
+       state: present
+
+    - name: Copy config file
+      copy:
+        src: spawn-fcgi
+        dest: /etc/sysconfig/spawn-fcgi
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy service unit
+      copy:
+        src: spawn-fcgi.service
+        dest: /etc/systemd/system/spawn-fcgi.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Reload daemon
+      shell: systemctl daemon-reload
+
+    - name: Start spawn-fcgi.service
+      shell: systemctl start spawn-fcgi.service

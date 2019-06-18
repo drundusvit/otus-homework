@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer for yum activity detection
+
+[Timer]
+OnUnitActiveSec=30s
+AccuracySec=1us
+Unit=yum-activity-detection.service
+
+[Install]
+WantedBy=multi-user.target

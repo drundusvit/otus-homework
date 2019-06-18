@@ -1,0 +1,59 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+   # - name: Install epel-release
+   #   yum: 
+   #    name:
+   #     - epel-release
+   #    state: present
+    - name: Install necessary packages
+      yum: 
+       name:
+        - httpd
+       state: present
+    - name: Copy configuration file first.conf
+      copy:
+       src: first.conf
+       dest: /etc/httpd/conf/
+       owner: root
+       group: root
+       mode: '0644'
+    - name: Copy configuration file second.conf
+      copy:
+       src: second.conf
+       dest: /etc/httpd/conf/
+       owner: root
+       group: root
+       mode: '0644'
+    - name: Copy httpd@.service file
+      copy:
+       src: httpd@.service
+       dest: /etc/systemd/system/
+       owner: root
+       group: root
+       mode: '0644'
+    - name: Copy httpd-first file
+      copy:
+       src: httpd-first
+       dest: /etc/sysconfig/
+       owner: root
+       group: root
+       mode: '0644'
+    - name: Copy httpd-second file
+      copy:
+       src: httpd-second
+       dest: /etc/sysconfig/
+       owner: root
+       group: root
+       mode: '0644'
+
+    - name: Reload daemon
+      shell: systemctl daemon-reload
+
+    - name: Start httpd@first
+      shell: systemctl start httpd@first
+
+    - name: Start httpd@second
+      shell: systemctl start httpd@second

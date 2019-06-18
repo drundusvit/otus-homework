@@ -1,0 +1,7 @@
+[Unit]
+Description=Check logs for yum activity
+
+[Service]
+Type=simple
+ExecStart=/opt/otus/script.sh $KEY_WORD $FOLDER_PATH
+EnvironmentFile=/etc/sysconfig/yum-activity-detection

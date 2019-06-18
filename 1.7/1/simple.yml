@@ -1,0 +1,54 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install epel-release
+      yum: name=epel-release state=latest
+
+    - name: Create folder path for sctipt
+      file:
+        path: /opt/otus/
+        state: directory
+        mode: '0755'
+
+    - name: Copy config file
+      copy:
+        src: yum-activity-detection
+        dest: /etc/sysconfig/yum-activity-detection
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy service unit
+      copy:
+        src: yum-activity-detection.service
+        dest: /etc/systemd/system/yum-activity-detection.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy timer unit
+      copy:
+        src: yum-activity-detection.timer
+        dest: /etc/systemd/system/yum-activity-detection.timer
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy script
+      copy:
+        src: script.sh
+        dest: /opt/otus/script.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Reload daemon
+      shell: systemctl daemon-reload
+
+    - name: Start yum-activity-detection.timer
+      shell: systemctl start yum-activity-detection.timer
+
+    - name: Start yum-activity-detection.service
+      shell: systemctl start yum-activity-detection.service

@@ -1,0 +1,3 @@
+# Options for checker.service
+FOLDER_PATH=/var/log/yum.log
+KEY_WORD=wget
