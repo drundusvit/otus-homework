@@ -1,0 +1,50 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  vars:
+    # created with:
+    # mkpasswd --method=sha-512##e$r%t^y
+    password: $6$0U.Z/GHUzn$/MIbki89b.XkIf.oaRMWIiwJDIlKl6UxUBVt6X9hQXdFcWI1dteet5ZYcwlqLe98fnyAeqUrTAoaQuZR/jDcj0
+  tasks:
+    - name: Create nonadmin user
+      user:
+        name: nonadmin
+        comment: Non Admin
+        password: "{{password}}"
+
+    - name: Ensure group "admin" exists
+      group:
+        name: admin
+        state: present
+
+    - name: Create adminchik user and add it to admin group
+      user:
+        name: adminchik
+        password: "{{password}}"
+        shell: /bin/bash
+        group: admin
+        append: yes
+
+    - name: Add vagrant user to admin group
+      user:
+        name: vagrant
+        group: admin
+        append: yes
+
+    - name: Copy script
+      copy:
+        src: date_check.sh
+        dest: /opt/auth_s cripts/
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Replace login pam configuration file
+      copy:
+        src: login
+        mode: 0644
+        dest: /etc/pam.d
+        owner: root
+        group: root
+        backup: yes
