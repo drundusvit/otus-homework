@@ -1,0 +1,165 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+:inetRouter => {
+        :box_name => "centos/6",
+        #:public => {:ip => '10.10.10.1', :adapter => 1},
+        :net => [
+                   {ip: '192.168.255.1', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                ]
+  },
+  :centralRouter => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.255.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.0.1', adapter: 3, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                   {ip: '192.168.0.33', adapter: 4, netmask: "255.255.255.240", virtualbox__intnet: "hw-net"},
+                   {ip: '192.168.0.65', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "mgt-net"},
+                   {ip: '192.168.254.1', adapter: 6, netmask: "255.255.255.252", virtualbox__intnet: "of1-net"},
+                   {ip: '192.168.254.5', adapter: 7, netmask: "255.255.255.252", virtualbox__intnet: "of2-net"},
+                ]
+  },
+  
+  :centralServer => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.0.2', adapter: 2, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                ]
+  },
+  
+  :office1Router => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.254.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "of1-net"},
+                   {ip: '192.168.2.1', adapter: 3, netmask: "255.255.255.192", virtualbox__intnet: "dev-of1"},
+                   {ip: '192.168.2.65', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "tst-of1"},
+                   {ip: '192.168.2.129', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "man-of1"},
+                   {ip: '192.168.2.193', adapter: 6, netmask: "255.255.255.192", virtualbox__intnet: "hard-of1"},
+                ]
+  },
+  
+  :office2Router => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.254.6', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "of2-net"},
+                   {ip: '192.168.1.1', adapter: 3, netmask: "255.255.255.192", virtualbox__intnet: "dev-of2"},
+                   {ip: '192.168.1.129', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "tst-of2"},
+                   {ip: '192.168.1.193', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "hard-of2"},
+                ]
+  },
+  :office1Server => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.2.2', adapter: 2, netmask: "255.255.255.192", virtualbox__intnet: "dev-of1"},
+                ]
+  },
+
+  :office2Server => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.1.2', adapter: 2, netmask: "255.255.255.192", virtualbox__intnet: "dev-of2"},
+                ]
+  },
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+        
+        case boxname.to_s
+        when "inetRouter"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+            sysctl net.ipv4.conf.all.forwarding=1
+            iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+            route add -net 192.168.254.0 netmask 255.255.255.252 gw 192.168.255.2
+            route add -net 192.168.2.0 netmask 255.255.255.0 gw 192.168.255.2
+            route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.255.2
+            route add -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.255.2
+            SHELL
+        when "centralRouter"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+            yum install tcpdump mtr -y
+            sysctl net.ipv4.conf.all.forwarding=1
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.255.1
+            ip r add 192.168.2.0/24 via 192.168.254.2
+            ip r add 192.168.1.0/24 via 192.168.254.6
+
+          SHELL
+        when "centralServer"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.0.1
+
+          SHELL
+        when "office1Router"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            sysctl net.ipv4.conf.all.forwarding=1
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.254.1
+
+
+          SHELL
+        when "office1Server"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            ip route delete default via 10.0.2.2 dev eth0
+            ip route add default via 192.168.2.1
+          SHELL
+
+
+        when "office2Router"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            sysctl net.ipv4.conf.all.forwarding=1
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.254.5
+
+
+          SHELL
+
+        when "office2Server"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            ip route delete default via 10.0.2.2 dev eth0
+            ip route add default via 192.168.1.1
+          SHELL
+
+        end
+
+      end
+
+  end
+  
+  
+end
+
+
