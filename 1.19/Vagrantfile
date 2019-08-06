@@ -1,0 +1,160 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+:inetRouter => {
+        :box_name => "centos/6",
+        #:public => {:ip => '10.10.10.1', :adapter => 1},
+        :net => [
+                   {ip: '192.168.255.1', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                ]
+  },
+
+
+  :inetRouter2 => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, ip: "10.0.0.2"}
+                ]
+  },
+
+  :centralRouter => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.255.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.0.1', adapter: 3, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                   {ip: '192.168.0.33', adapter: 4, netmask: "255.255.255.240", virtualbox__intnet: "hw-net"},
+                   {ip: '192.168.0.65', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "mgt-net"},
+                   {ip: '192.168.254.1', adapter: 6, netmask: "255.255.255.252", virtualbox__intnet: "of1-net"},
+                   {ip: '192.168.254.5', adapter: 7, netmask: "255.255.255.252", virtualbox__intnet: "of2-net"},
+                   {adapter: 8, ip: "10.0.1.2"}
+                ]
+  },
+
+
+  
+  
+  :centralServer => {
+        :box_name => "centos/7",
+        :net => [
+                   {ip: '192.168.0.2', adapter: 2, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                ]
+  },
+  
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+        
+        case boxname.to_s
+        when "inetRouter"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+            #original net arch setup
+            sysctl net.ipv4.conf.all.forwarding=1
+            iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+            route add -net 192.168.254.0 netmask 255.255.255.252 gw 192.168.255.2
+            route add -net 192.168.2.0 netmask 255.255.255.0 gw 192.168.255.2
+            route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.255.2
+            route add -net 192.168.0.0 netmask 255.255.255.0 gw 192.168.255.2
+            #iptables knock rules task
+            sed -i 's/^PasswordAuthentication\ no/PasswordAuthentication\ yes/' /etc/ssh/sshd_config
+            service sshd restart
+            iptables -N SSH-INPUT
+            iptables -N SSH-INPUTTWO
+            iptables -A SSH-INPUT -m recent --set --name SSH1 --rsource -j DROP 
+            iptables -A SSH-INPUTTWO -m recent --set --name SSH2 --rsource -j DROP 
+            iptables -N TRAFFIC
+            iptables -A TRAFFIC -p icmp -m icmp --icmp-type any -j ACCEPT 
+            iptables -A TRAFFIC -m state --state RELATED,ESTABLISHED -j ACCEPT 
+            iptables -A TRAFFIC -s 192.168.255.2/32 -p tcp -m state --state NEW -m tcp --dport 22 -m recent --rcheck --seconds 30 --name SSH2 --rsource -j ACCEPT 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH2 --rsource -j DROP 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp --dport 9991 -m recent --rcheck --name SSH1 --rsource -j SSH-INPUTTWO 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH1 --rsource -j DROP 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp --dport 7777 -m recent --rcheck --name SSH0 --rsource -j SSH-INPUT 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH0 --rsource -j DROP 
+            iptables -A TRAFFIC -p tcp -m state --state NEW -m tcp --dport 8881 -m recent --set --name SSH0 --rsource -j DROP 
+            iptables -A TRAFFIC -j DROP 
+            iptables -A INPUT -j TRAFFIC
+            iptables -P INPUT DROP
+            iptables -P FORWARD ACCEPT
+            iptables -P OUTPUT ACCEPT
+            iptables-save
+            SHELL
+
+        when "inetRouter2"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install tcpdump mtr -y
+            nmcli device modify eth0 ipv4.never-default true
+
+          SHELL
+        when "centralRouter"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+            yum install tcpdump mtr nmap -y
+            sysctl net.ipv4.conf.all.forwarding=1
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.255.1
+            ip r add 192.168.2.0/24 via 192.168.254.2
+            ip r add 192.168.1.0/24 via 192.168.254.6
+            #knock script
+            mkdir /opt/scripts
+            echo '#!/bin/bash' >> /opt/scripts/knock.sh
+            echo 'HOST=$1' >> /opt/scripts/knock.sh
+            echo 'shift' >> /opt/scripts/knock.sh
+            echo 'for ARG in "$@"' >> /opt/scripts/knock.sh
+            echo 'do' >> /opt/scripts/knock.sh
+            echo '        nmap -Pn --host-timeout 100 --max-retries 0 -p $ARG $HOST' >> /opt/scripts/knock.sh
+            echo 'done' >> /opt/scripts/knock.sh
+            chmod +x /opt/scripts/knock.sh
+            echo '192.168.255.1 inetRouter inetRouter' >> /etc/hosts
+            #/opt/scripts/knock.sh inetRouter 8881 7777 9991
+            #use ssh vagrant@inetRouter to connect to inetRouter
+
+            #task for http on centralServer
+            iptables -t nat -A PREROUTING -s 10.0.0.2/32 -d 10.0.1.2/32 -p tcp -m tcp --dport 8080 -j DNAT --to-destination 192.168.0.2:80
+            iptables -t nat -A POSTROUTING -s 10.0.0.2/32 -o eth2 -p tcp -j SNAT --to-source 192.168.0.1
+            ip route add 10.0.0.0/24 via 10.0.1.1
+
+          SHELL
+        when "centralServer"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+
+            yum install epel-release -y
+            yum install tcpdump mtr nginx -y
+            nmcli device modify eth0 ipv4.never-default true
+            nmcli device modify eth1 ipv4.gateway 192.168.0.1
+            systemctl daemon-reload
+            systemctl enable nginx
+            systemctl start nginx
+
+          SHELL
+
+        end
+
+      end
+
+  end
+  
+  
+end
