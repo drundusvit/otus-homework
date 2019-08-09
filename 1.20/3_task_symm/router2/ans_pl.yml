@@ -1,0 +1,52 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install tools
+      yum:
+        name:
+          - quagga
+          - tcpdump
+          - mtr
+        state: present
+
+    - name: Enable config save
+      shell: setsebool -P zebra_write_config 1
+
+    - name: Copy preped ospf config file
+      copy:
+        src: Router2.ospfd
+        dest: /etc/quagga/ospfd.conf
+        owner: quagga
+        group: quagga
+        mode: 0600
+
+    - name: Copy preped zebra conf
+      copy:
+        src: Router2.zebra
+        dest: /etc/quagga/zebra.conf
+        owner: quagga
+        group: quagga
+        mode: 0600
+
+    - name: Set ip.forwarding
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: 1
+        sysctl_set: yes
+
+    - name: Set net.ipv4.conf.all.rp_filter
+      sysctl:
+        name: net.ipv4.conf.all.rp_filter
+        value: 2
+        sysctl_set: yes
+
+    - name: Daemon-reload
+      systemd:
+        daemon_reload: yes
+
+    - name: Start ospfd
+      systemd:
+        name: ospfd
+        state: started

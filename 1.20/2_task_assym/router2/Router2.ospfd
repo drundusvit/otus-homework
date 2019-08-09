@@ -1,0 +1,27 @@
+
+!
+hostname Router2
+password zebra
+log file /var/log/quagga/ospfd.log informational
+log stdout
+!
+!
+!
+interface eth0
+!
+interface eth1
+ ip ospf cost 30
+!
+interface eth2
+!
+interface lo
+!
+router ospf
+ ospf router-id 2.2.2.2
+ redistribute connected
+ network 192.168.0.0/16 area 0.0.0.0
+ neighbor 192.168.12.1
+ neighbor 192.168.23.3
+!
+line vty
+!

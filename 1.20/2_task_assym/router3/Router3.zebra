@@ -1,0 +1,25 @@
+!
+hostname Router3
+password zebra
+log file /var/log/quagga/zebra.log
+!
+interface eth0
+ ip address 3.0.0.3/24
+ ipv6 nd suppress-ra
+!
+interface eth1
+ ip address 192.168.13.3/29
+ ipv6 nd suppress-ra
+!
+interface eth2
+ ip address 192.168.23.3/29
+ ipv6 nd suppress-ra
+!
+interface lo
+ ip address 3.3.3.3/32
+!
+ip forwarding
+!
+!
+line vty
+!
