@@ -1,0 +1,99 @@
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+  - name: install packages
+    yum: name={{ item }} state=latest 
+    with_items:
+      - tcpdump
+
+- hosts: testClient1
+  become: yes
+  become_user: root
+  tasks:
+  - name: Add vlan100
+    shell: nmcli con add type vlan con-name VLAN100 dev eth1 id 100 ip4 10.10.10.1/24
+
+- hosts: testServer1
+  become: yes
+  become_user: root
+  tasks:
+  - name: Add vlan100
+    shell: nmcli con add type vlan con-name VLAN100 dev eth1 id 100 ip4 10.10.10.254/24
+
+- hosts: testClient2
+  become: yes
+  become_user: root
+  tasks:
+  - name: Add vlan101
+    shell: nmcli con add type vlan con-name VLAN101 dev eth1 id 101 ip4 10.10.10.1/24
+
+- hosts: testServer2
+  become: yes
+  become_user: root
+  tasks:
+  - name: Add vlan101
+    shell: nmcli con add type vlan con-name VLAN101 dev eth1 id 101 ip4 10.10.10.254/24
+
+- hosts: centralRouter
+  become: yes
+  become_user: root
+  tasks:
+  - name: Add vlan100 and vlan101
+    shell: nmcli con add type vlan con-name VLAN100 dev eth3 id 100; nmcli con add type vlan con-name VLAN101 dev eth3 id 101
+
+  - name: Disable enslaved interfaces eth1 and eth2
+    shell: ip link set eth1 down; ip link set eth2 down
+
+  - name: Enable promisc mode
+    shell: ip link set eth1 promisc on; ip link set eth2 promisc on
+
+  - name: Copy teamd configuration file
+    copy:
+      src: centralRouter-team0.conf
+      dest: /etc/team0.conf
+      mode: 0660
+      owner: root
+      group: root
+
+  - name: Start teamd with team0.conf
+    shell: teamd -f /etc/team0.conf -d
+
+  - name: Activate teaming interface
+    shell: ip link set team0 up
+
+  - name: Assing ip address on teaming interface
+    shell: ip addr add 192.168.255.2/30 dev team0
+
+- hosts: inetRouter
+  become: yes
+  become_user: root
+  tasks:
+  - name: Enable forwarding of packets
+    shell: sysctl net.ipv4.conf.all.forwarding=1
+
+  - name: Enable NAT
+    shell: iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+
+  - name: Disable enslaved interfaces eth1 and eth2
+    shell: ip link set eth1 down; ip link set eth2 down
+
+  - name: Enable promisc mode
+    shell: ip link set eth1 promisc on; ip link set eth2 promisc on
+
+  - name: Copy teamd configuration file
+    copy:
+      src: inetRouter-team0.conf
+      dest: /etc/team0.conf
+      mode: 0660
+      owner: root
+      group: root
+
+  - name: Start teamd with team0.conf
+    shell: teamd -f /etc/team0.conf -d
+
+  - name: Activate teaming interface
+    shell: ip link set team0 up
+
+  - name: Assing ip address on teaming interface
+    shell: ip addr add 192.168.255.1/30 dev team0

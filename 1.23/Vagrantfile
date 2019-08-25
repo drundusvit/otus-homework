@@ -1,0 +1,88 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+  :inetRouter => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: true, virtualbox__intnet: "inetlink1"},
+                   {adapter: 3, auto_config: true, virtualbox__intnet: "inetlink2"},
+                ]
+  },
+  :centralRouter => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: true, virtualbox__intnet: "inetlink1"},
+                   {adapter: 3, auto_config: true, virtualbox__intnet: "inetlink2"},
+                   {adapter: 4, auto_config: true, virtualbox__intnet: "testVlan"},
+                ]
+  },
+
+
+  :testClient2 => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: false, virtualbox__intnet: "testVlan"},
+                ]
+  },
+
+  :testClient1 => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: false, virtualbox__intnet: "testVlan"},
+                ]
+  },
+
+  :testServer2 => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: false, virtualbox__intnet: "testVlan"},
+                ]
+  },
+
+  :testServer1 => {
+        :box_name => "centos/7",
+        :net => [
+                   {adapter: 2, auto_config: false, virtualbox__intnet: "testVlan"},
+                ]
+  },
+  
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+        
+        box.vm.provision "ansible" do |ansible|
+          ansible.verbose = "vvv"
+          ansible.playbook = "provision/playbook.yml"
+          become = "true"
+          become_user = "root"
+      end
+
+      end
+
+  end
+  
+  
+end
