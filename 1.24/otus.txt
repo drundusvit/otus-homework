@@ -1,1 +1,1 @@
-mdamir/nginx_simple_antibot
+mdamir/nginx_antiddos
