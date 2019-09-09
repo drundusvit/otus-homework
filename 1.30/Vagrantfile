@@ -1,0 +1,95 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+  :master => {
+        :box_name => "centos/7",
+        :ip_addr => '192.168.11.150'
+  },
+  :slave => {
+        :box_name => "centos/7",
+        :ip_addr => '192.168.11.151'
+  }
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+      config.vm.define boxname do |box|
+
+          box.vm.box = boxconfig[:box_name]
+          box.vm.host_name = boxname.to_s
+
+          #box.vm.network "forwarded_port", guest: 3260, host: 3260+offset
+
+          box.vm.network "private_network", ip: boxconfig[:ip_addr]
+
+          box.vm.provider :virtualbox do |vb|
+            vb.customize ["modifyvm", :id, "--memory", "1024"]
+            # Подключаем дополнительные диски
+            #vb.customize ['createhd', '--filename', second_disk, '--format', 'VDI', '--size', 5 * 1024]
+            #vb.customize ['storageattach', :id, '--storagectl', 'IDE', '--port', 0, '--device', 1, '--type', 'hdd', '--medium', second_disk]
+          end
+
+          box.vm.provision "shell", inline: <<-SHELL
+                mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+                yum install http://www.percona.com/downloads/percona-release/redhat/0.1-6/percona-release-0.1-6.noarch.rpm -y
+                yum install Percona-Server-server-57 -y --nogpgcheck
+                cp /vagrant/conf/conf.d/* /etc/my.cnf.d/
+                systemctl start mysql
+                init_pass=$(cat /var/log/mysqld.log | grep 'root@localhost:' | awk '{print $11}')
+                root_pass=oTus-3465er
+                echo "root_pass=oTus-3465er" >> /etc/environment
+                echo "init_pass=$init_pass" >> /etc/environment
+                mysql -u root -p"$init_pass" -e "ALTER USER USER() IDENTIFIED BY \'"$root_pass"\';" --connect-expired-password
+                echo "[mysql]" >> /root/.my.cnf
+                echo "password=\"$root_pass\"" >> /root/.my.cnf
+          SHELL
+
+          case boxname.to_s
+          when "master"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+          #install nfs
+          systemctl enable rpcbind
+          systemctl enable nfs-server
+          systemctl enable nfs-lock
+          systemctl enable nfs-idmap
+          mkdir -p /home/nfs
+          chmod -R 777 /home/nfs
+          echo "/home/nfs 192.168.11.0/24(rw,sync,no_root_squash,no_all_squash)" > /etc/exports
+          systemctl restart nfs-server
+          #mysql dump
+          mysql -e "SET GLOBAL server_id=1;"
+          mysql -e "CREATE DATABASE bet;"
+          mysql -D bet < /vagrant/bet.dmp
+          mysql -e "CREATE USER 'repl'@'%' IDENTIFIED BY '\!OtusLinux2018';"
+          mysql -e " GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%' IDENTIFIED BY '\!OtusLinux2018';"
+          mysqldump --all-databases --triggers --routines --master-data --ignore-table=bet.events_on_demand --ignore-table=bet.v_same_event -u root -p"$root_pass" > /home/nfs/master.sql
+
+          SHELL
+
+        when "slave"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+                    #install nfs
+          systemctl enable rpcbind
+          systemctl enable nfs-server
+          systemctl enable nfs-lock
+          systemctl enable nfs-idmap
+          mkdir /media/nfs_share
+          mount -t nfs 192.168.11.150:/home/nfs/ /media/nfs_share/
+          #mysql
+          sed -i 's/server-id.*/server-id\ =\ 2/g' /etc/my.cnf.d/01-base.cnf
+          #mysql -e "SET GLOBAL server_id=2;"
+          sed -i 's/^\#replicate-ignore-table/replicate-ignore-table/g' /etc/my.cnf.d/05-binlog.cnf
+          systemctl restart mysql
+          mysql -e "reset master"
+          mysql -e "SOURCE /media/nfs_share/master.sql"
+          mysql -e "CHANGE MASTER TO MASTER_HOST = '192.168.11.150', MASTER_PORT = 3306, MASTER_USER = 'repl', MASTER_PASSWORD = '\!OtusLinux2018', MASTER_AUTO_POSITION = 1;"
+          mysql -e "START SLAVE;"
+          SHELL
+        end
+      end
+  end
+end
