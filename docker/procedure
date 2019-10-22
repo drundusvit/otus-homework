@@ -1,0 +1,10 @@
+First assignment:
+1. Enter changed_nginx directory
+2. Execute docker build .
+3. Execute the build in the foreground via docker run -d f5db54c08648
+4. Open http://172.17.0.2/ in any browser
+
+Second assignment:
+1. Enter nginx+php directory
+2. Execute docker-compose up -d
+3. Open http://localhost/index.php in any browser
