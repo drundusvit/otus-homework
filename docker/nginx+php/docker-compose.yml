@@ -1,0 +1,27 @@
+version: "2"
+services:
+  nginx:
+ #   build: ./nginx/
+    image: mdamir/otus_docker:nginx
+    ports:
+      - "80:80"
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.100
+    depends_on:
+      - php
+
+  php:
+#    build: ./php/
+    image: mdamir/otus_docker:php
+    volumes:
+      - ./php/src:/var/www/html/
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.200
+
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
