@@ -1,0 +1,4 @@
+1. Execute vagrant up
+2. Log in to client host via vagrant ssh ipaclient
+3. Execute sudo -i -u damir
+4. Execute ssh ipa.otus.linux
