@@ -1,0 +1,77 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+home = ENV['HOME']
+
+MACHINES = {
+  :otuslinux => {
+                  :box_name => "centos/7",
+                  :ip_addr => '192.168.11.101',
+                },
+  :ipaclient => {
+                  :box_name => "centos/7",
+                  :ip_addr => '192.168.11.102',
+
+                },
+            }
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+      config.vm.define boxname do |box|
+
+          box.vm.box = boxconfig[:box_name]
+          box.vm.host_name = boxname.to_s
+
+          #box.vm.network "forwarded_port", guest: 3260, host: 3260+offset
+
+          box.vm.network "private_network", ip: boxconfig[:ip_addr]
+
+          box.vm.provider :virtualbox do |vb|
+            	  vb.customize ["modifyvm", :id, "--memory", "4096", "--cpus", "2"]
+                  needsController = false
+
+          end
+ 	  box.vm.provision "shell", inline: <<-SHELL
+        #default
+	      mkdir -p ~root/.ssh
+        cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+    case boxname.to_s
+    when "otuslinux"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+	       yum install epel-release -y
+      	yum install ipa-server-dns ipa-server bind bind-dyndb-ldap -y
+        echo "ipa.otus.linux" > /etc/hostname
+        echo "192.168.11.101 ipa.otus.linux ipa" >> /etc/hosts
+        echo 'yes' | ipa-server-install -r OTUS.LINUX -n otus.linux --hostname ipa.otus.linux -p otus#pokus -a pokus#otus --no-reverse --auto-forwarders --setup-dns
+        echo "pokus#otus" | kinit admin
+        ipa dnsrecord-add otus.linux ipaclient --a-rec 192.168.11.102
+        echo simplepassword | ipa user-add --first damir --last=damir --password damir --setattr=krbPasswordExpiration=20991231111111Z
+  	  SHELL
+    when "ipaclient"
+          box.vm.provision "shell", run: "always", inline: <<-SHELL
+          yum install epel-release -y
+          yum install -y freeipa-client ipa-admintools
+          systemctl stop chronyd; systemctl disable chronyd; systemctl mask chronyd
+          systemctl start ntpd
+          echo "search otus.linux" > /etc/resolv.conf
+          echo "nameserver 192.168.11.101" >> /etc/resolv.conf
+          hostname ipaclient.otus.linux
+          echo "192.168.11.102 ipaclient.otus.linux ipaclient" >> /etc/hosts
+          echo "192.168.11.101 ipa.otus.linux ipa" >> /etc/hosts
+          echo "yes" | ipa-client-install --mkhomedir --force-ntpd -p admin -w pokus#otus
+          sudo -u damir mkdir -p /home/damir/.ssh/
+          cp /vagrant/id* /home/damir/.ssh/
+          chmod 600 /home/damir/.ssh/id_rsa
+          chmod 644 /home/damir/.ssh/id_rsa.pub
+          chown damir:damir /home/damir/.ssh/*
+          echo simplepassword | kinit damir
+          ipa user-mod damir --sshpubkey="$(cat /home/damir/.ssh/id_rsa.pub)"
+          SHELL
+      end
+      end
+  end
+end
+
