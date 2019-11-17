@@ -1,0 +1,22 @@
+First option is to insert init=/bin/bash in kernel boot parameters in grub config before the start:
+1. Press 'e' on grub screen
+2. The string before the editing:
+linux16 /boot/vmlinuz-3.10.0-957.5.1.el7.x86_64 root=UUID=f52f361a-da1a-4ea0-8c7f-ca2706e86b46 ro no_timer_check console=tty0 console=ttyS0,115200n8 net.ifnames=0 biosdevname=0 elevator=noop crashkernel=auto LANG=en_US.UTF-8
+3. Had to delete console=ttyS0,115200n8 option because the kernel crashes every time if I add only init=/bin/bash at the end. Final string:
+linux16 /boot/vmlinuz-3.10.0-957.5.1.el7.x86_64 root=UUID=f52f361a-da1a-4ea0-8c7f-ca2706e86b46 rw no_timer_check console=tty0 net.ifnames=0 biosdevname=0 elevator=noop crashkernel=auto LANG=en_US.UTF-8 init=/bin/bash
+PID1 was equal to /bin/bash
+the system was not operational. I tried to change password for vagrant user, but I wasn't able to login with the new credentials
+
+Second option is to insert rd.break at the end of the line:
+linux16 /boot/vmlinuz-3.10.0-957.5.1.el7.x86_64 root=UUID=f52f361a-da1a-4ea0-8c7f-ca2706e86b46 rw no_timer_check console=tty0 net.ifnames=0 biosdevname=0 elevator=noop crashkernel=auto LANG=en_US.UTF-8 rd.break
+Entering emergency mode, switch_root
+pid1 was /init
+
+mount | grep root
+/dev/sda1 /sysroot type xfs (rw,relatime,attr2,inode64,noquota)
+chroot /sysroot
+passwd root
+passwd vagrant
+touch /.autorelabel
+
+reboot -f didn't allow to apply the changes. Had to execute "exit" two times. Then I was able to login under root and vagrant user
